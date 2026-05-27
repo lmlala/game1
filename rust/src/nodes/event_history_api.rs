@@ -75,6 +75,59 @@ pub fn build_filter_meta(runner: &SimRunner) -> VarDict {
 }
 
 
+
+fn entity_ids_for_event(event: &GameEvent) -> Vec<String> {
+    let mut set = std::collections::HashSet::new();
+    for id in event.actors.iter().chain(event.targets.iter()) {
+        set.insert(id.clone());
+    }
+    set.into_iter().collect()
+}
+
+fn gang_ids_for_event(world: &WorldState, event: &GameEvent) -> Vec<String> {
+    let mut set = std::collections::HashSet::new();
+    for id in event.actors.iter().chain(event.targets.iter()) {
+        if id.starts_with("gang:") {
+            set.insert(id.clone());
+        } else if id.starts_with("person:") {
+            let eid = EntityId::new(id.clone());
+            if let Ok(person) = world.person(&eid) {
+                set.insert(person.gang_id.as_str().to_string());
+            }
+        }
+    }
+    if let Some(name) = event.payload.get("gang_name") {
+        for gang in world.gangs.values() {
+            if &gang.name == name {
+                set.insert(gang.id.as_str().to_string());
+            }
+        }
+    }
+    if let Some(name) = event.payload.get("attacker_gang") {
+        for gang in world.gangs.values() {
+            if &gang.name == name {
+                set.insert(gang.id.as_str().to_string());
+            }
+        }
+    }
+    if let Some(name) = event.payload.get("winner") {
+        for gang in world.gangs.values() {
+            if &gang.name == name {
+                set.insert(gang.id.as_str().to_string());
+            }
+        }
+    }
+    set.into_iter().collect()
+}
+
+fn string_array(values: &[String]) -> Array<Variant> {
+    let mut arr = Array::<Variant>::new();
+    for v in values {
+        arr.push(&Variant::from(v.as_str()));
+    }
+    arr
+}
+
 pub fn query_history(
     runner: &SimRunner,
     gang_id: &str,
@@ -90,7 +143,7 @@ pub fn query_history(
         .query_history_newest_first(&runner.world, &filters);
     let mut arr = Array::<Variant>::new();
     for event in hits {
-        arr.push(&Variant::from(event_row_dict(event)));
+        arr.push(&Variant::from(event_row_dict(event, &runner.world)));
     }
     arr
 }
@@ -156,7 +209,7 @@ fn fill_detail_panel(panel: &mut VarDict, world: &WorldState, event: &GameEvent)
     panel.set("related_events", &related_arr);
 }
 
-fn event_row_dict(event: &GameEvent) -> VarDict {
+fn event_row_dict(event: &GameEvent, world: &WorldState) -> VarDict {
     let mut d = VarDict::new();
     d.set("id", event.event_id.as_str());
     d.set("tick", event.tick as i32);
@@ -165,6 +218,8 @@ fn event_row_dict(event: &GameEvent) -> VarDict {
     d.set("severity", severity_key(event));
     d.set("severity_label", severity_label(event));
     d.set("summary", event_summary(event).as_str());
+    d.set("gang_ids", &string_array(&gang_ids_for_event(world, event)));
+    d.set("entity_ids", &string_array(&entity_ids_for_event(event)));
     d
 }
 

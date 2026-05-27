@@ -175,8 +175,11 @@ func _make_fallback_events() -> Array:
 	return [
 		{
 			"id": "evt-001",
+			"gang_ids": ["gang:black_tiger"],
+			"entity_ids": ["gang:black_tiger", "person:demo"],
 			"tick": 1,
 			"type": "PlayerCommandQueued",
+			"severity": "normal",
 			"type_label": "帮主号令",
 			"severity": "normal",
 			"severity_label": "普通",
@@ -192,8 +195,11 @@ func _make_fallback_events() -> Array:
 		},
 		{
 			"id": "evt-002",
+			"gang_ids": ["gang:black_tiger"],
+			"entity_ids": ["gang:black_tiger"],
 			"tick": 2,
 			"type": "RumorSpread",
+			"severity": "minor",
 			"type_label": "流言",
 			"severity": "minor",
 			"severity_label": "琐碎",
@@ -208,6 +214,8 @@ func _make_fallback_events() -> Array:
 			"related_events": [
 				{
 					"id": "evt-001",
+			"gang_ids": ["gang:black_tiger"],
+			"entity_ids": ["gang:black_tiger", "person:demo"],
 					"tick": 1,
 					"type_label": "帮主号令",
 					"summary": "【占位】帮主下令: 奖赏",
@@ -241,20 +249,17 @@ func query_event_history(
 		_fallback_events = _make_fallback_events()
 	var out: Array = []
 	for e in _fallback_events:
-		if gang_id != "*" and gang_id not in e.get("actors", []):
-			if gang_id != "gang:black_tiger":
-				continue
 		if event_type != "*" and str(e.get("type", "")) != event_type:
 			continue
 		if severity != "*" and str(e.get("severity", "")) != severity:
 			continue
+		if gang_id != "*":
+			var gids: Array = e.get("gang_ids", [])
+			if gang_id not in gids:
+				continue
 		if entity_id != "*":
-			var hit := false
-			for p in e.get("participants", []):
-				if str(p.get("id", "")) == entity_id:
-					hit = true
-					break
-			if not hit:
+			var eids: Array = e.get("entity_ids", [])
+			if entity_id not in eids:
 				continue
 		out.append(e)
 		if out.size() >= limit:

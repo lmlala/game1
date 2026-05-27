@@ -67,6 +67,10 @@ var _panel_mode := "event"
 var _selected_person_id := ""
 var _selected_event_id := ""
 var _back_mode := "event"
+var _event_history_snapshot: Array = []
+var _event_history_snapshot_tick: int = -1
+var _event_detail_cache: Dictionary = {}
+
 var _event_filter_ids: Dictionary = {
 	"gang": PackedStringArray(),
 	"type": PackedStringArray(),
@@ -159,7 +163,6 @@ func _boot_sim() -> void:
 	$UI.layer = 10
 	_init_gang_options()
 	_on_reset()
-	call_deferred("_init_event_history_filters")
 
 
 func _ensure_sim() -> Node:
@@ -408,6 +411,7 @@ func _show_event_history_mode() -> void:
 	btn_back.text = "返回江湖事件"
 	_hide_side_panels()
 	event_history_panel.visible = true
+	_capture_event_history_snapshot()
 	_init_event_history_filters()
 	_refresh_event_history_list()
 
@@ -553,6 +557,17 @@ func _event_rows_from_recent_logs(limit: int) -> Array:
 
 
 func _query_event_rows(gang_id: String, type_id: String, sev_id: String, entity_id: String, limit: int) -> Array:
+	return _query_event_rows_from_sim(gang_id, type_id, sev_id, entity_id, limit, false)
+
+
+func _query_event_rows_from_sim(
+	gang_id: String,
+	type_id: String,
+	sev_id: String,
+	entity_id: String,
+	limit: int,
+	allow_log_fallback: bool,
+) -> Array:
 	if sim == null:
 		return []
 	var rows: Array = []
@@ -565,9 +580,67 @@ func _query_event_rows(gang_id: String, type_id: String, sev_id: String, entity_
 		)
 		if r is Array:
 			rows = r
-	if rows.is_empty():
+	if rows.is_empty() and allow_log_fallback:
 		rows = _event_rows_from_recent_logs(limit)
 	return rows
+
+
+func _variant_to_array(value: Variant) -> Array:
+	if value is Array:
+		return value
+	if value is PackedStringArray:
+		var out: Array = []
+		for item in value:
+			out.append(str(item))
+		return out
+	return []
+
+
+func _snapshot_row_matches(
+	row: Dictionary,
+	gang_id: String,
+	type_id: String,
+	sev_id: String,
+	entity_id: String,
+) -> bool:
+	if type_id != "*" and str(row.get("type", "")) != type_id:
+		return false
+	if sev_id != "*" and str(row.get("severity", "")) != sev_id:
+		return false
+	if gang_id != "*":
+		var gang_hit := false
+		for g in _variant_to_array(row.get("gang_ids", [])):
+			if str(g) == gang_id:
+				gang_hit = true
+				break
+		if not gang_hit:
+			return false
+	if entity_id != "*":
+		var ent_hit := false
+		for e in _variant_to_array(row.get("entity_ids", [])):
+			if str(e) == entity_id:
+				ent_hit = true
+				break
+		if not ent_hit:
+			return false
+	return true
+
+
+func _capture_event_history_snapshot() -> void:
+	_event_history_snapshot = _query_event_rows_from_sim("*", "*", "*", "*", 200, false)
+	if _event_history_snapshot.is_empty():
+		_event_history_snapshot = _event_rows_from_recent_logs(200)
+	_event_history_snapshot_tick = int(sim.get_tick()) if sim != null and sim.has_method("get_tick") else -1
+	_event_detail_cache.clear()
+
+
+func _current_filter_id_from_option(option: OptionButton) -> String:
+	if option == null or not is_instance_valid(option):
+		return "*"
+	var idx := option.selected
+	if idx < 0:
+		return "*"
+	return str(option.get_item_metadata(idx))
 
 
 func _init_event_history_filters() -> void:
@@ -602,6 +675,7 @@ func _fetch_event_history_filter_meta() -> Dictionary:
 func _fill_filter_option(option: OptionButton, key: String, meta: Dictionary) -> void:
 	if option == null or not is_instance_valid(option):
 		return
+	var block := option.block_signals(true)
 	option.clear()
 	var ids_key := "%s_ids" % key
 	var labels_key := "%s_labels" % key
@@ -611,6 +685,7 @@ func _fill_filter_option(option: OptionButton, key: String, meta: Dictionary) ->
 		option.add_item("全部")
 		option.set_item_metadata(0, "*")
 		_event_filter_ids[key] = PackedStringArray(["*"])
+		option.block_signals(block)
 		return
 	_event_filter_ids[key] = ids
 	for i in range(ids.size()):
@@ -618,16 +693,22 @@ func _fill_filter_option(option: OptionButton, key: String, meta: Dictionary) ->
 		option.add_item(label)
 		option.set_item_metadata(i, str(ids[i]))
 	option.select(0)
+	option.block_signals(block)
 
 
 func _current_filter_id(key: String, option: OptionButton) -> String:
+	if option == null or not is_instance_valid(option):
+		return "*"
 	var idx := option.selected
 	if idx < 0:
 		return "*"
 	var meta: Variant = option.get_item_metadata(idx)
-	if meta == null:
-		return "*"
-	return str(meta)
+	if meta != null and str(meta) != "":
+		return str(meta)
+	var ids: PackedStringArray = _event_filter_ids.get(key, PackedStringArray())
+	if idx >= 0 and idx < ids.size():
+		return str(ids[idx])
+	return "*"
 
 
 func _refresh_event_history_list() -> void:
@@ -638,9 +719,16 @@ func _refresh_event_history_list() -> void:
 	var type_id := _current_filter_id("type", filter_type) if is_instance_valid(filter_type) else "*"
 	var sev_id := _current_filter_id("severity", filter_severity) if is_instance_valid(filter_severity) else "*"
 	var entity_id := _current_filter_id("entity", filter_entity) if is_instance_valid(filter_entity) else "*"
-	var rows: Array = _query_event_rows(gang_id, type_id, sev_id, entity_id, 80)
+	var rows: Array = []
+	for row in _event_history_snapshot:
+		var d: Dictionary = row if row is Dictionary else {}
+		if _snapshot_row_matches(d, gang_id, type_id, sev_id, entity_id):
+			rows.append(d)
 	if rows.is_empty():
-		event_history_list.add_item("暂无事件。请继续运行模拟，或执行 ./scripts/build-rust.sh 后重启 Godot。")
+		var hint := "当前筛选下无事件（快照共 %d 条）。" % _event_history_snapshot.size()
+		if _event_history_snapshot_tick >= 0:
+			hint = "第 %d 天快照 | " % _event_history_snapshot_tick + hint
+		event_history_list.add_item(hint)
 		return
 	for row in rows:
 		var d: Dictionary = row if row is Dictionary else {}
@@ -658,15 +746,18 @@ func _refresh_event_history_list() -> void:
 
 
 func _fill_event_detail_panel(event_id: String) -> void:
-	if sim == null:
-		return
 	var panel: Dictionary = {}
-	if sim.get_script() == FALLBACK_SCRIPT and sim.has_method("get_event_detail"):
-		panel = sim.get_event_detail(event_id)
-	elif _safe_has_method("get_event_detail"):
-		var r: Variant = sim.call("get_event_detail", event_id)
-		if r is Dictionary:
-			panel = r
+	if _event_detail_cache.has(event_id):
+		panel = _event_detail_cache[event_id]
+	elif sim != null:
+		if sim.get_script() == FALLBACK_SCRIPT and sim.has_method("get_event_detail"):
+			panel = sim.get_event_detail(event_id)
+		elif _safe_has_method("get_event_detail"):
+			var r: Variant = sim.call("get_event_detail", event_id)
+			if r is Dictionary:
+				panel = r
+		if not panel.is_empty():
+			_event_detail_cache[event_id] = panel
 	if not bool(panel.get("found", true)) and panel.is_empty():
 		event_detail_title.text = "未找到事件"
 		return
@@ -1022,8 +1113,7 @@ func _refresh_all() -> void:
 			if _selected_person_id != "":
 				_fill_person_panel(_selected_person_id)
 		"event_history":
-			_refresh_event_history_list()
+			pass
 		"event_detail":
-			if _selected_event_id != "":
-				_fill_event_detail_panel(_selected_event_id)
+			pass
 	world_view.refresh(sim)
