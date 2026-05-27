@@ -142,24 +142,37 @@ text = "人员"
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 1.0
-custom_minimum_size = Vector2(0, 120)
+custom_minimum_size = Vector2(0, 100)
 
-[node name="AttrMargin" type="MarginContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel"]
+[node name="AttrScroll" type="ScrollContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel"]
 layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="AttrMargin" type="MarginContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/margin_left = 6
 theme_override_constants/margin_top = 4
 theme_override_constants/margin_right = 6
 theme_override_constants/margin_bottom = 4
 
-[node name="AttrList" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrMargin"]
+[node name="AttrList" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrScroll/AttrMargin"]
 layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PersonLogLabel" type="Label" parent="UI/HUD/RightPanel/VBox/PersonPanel"]
+layout_mode = 2
+text = "个人事件 (新→旧)"
+theme_override_font_sizes/font_size = 12
 
 [node name="PersonLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox/PersonPanel"]
 layout_mode = 2
 size_flags_vertical = 3
 size_flags_stretch_ratio = 2.0
-custom_minimum_size = Vector2(0, 200)
+custom_minimum_size = Vector2(0, 160)
 scroll_active = true
+fit_content = false
 
 [node name="BottomBar" type="HBoxContainer" parent="UI/HUD"]
 layout_mode = 1

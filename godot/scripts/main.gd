@@ -14,7 +14,7 @@ var sim: Node
 @onready var member_list: ItemList = $UI/HUD/RightPanel/VBox/RosterPanel/MemberList
 @onready var person_panel: VBoxContainer = $UI/HUD/RightPanel/VBox/PersonPanel
 @onready var person_title: Label = $UI/HUD/RightPanel/VBox/PersonPanel/PersonTitle
-@onready var attr_list: VBoxContainer = $UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrMargin/AttrList
+@onready var attr_list: VBoxContainer = $UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrScroll/AttrMargin/AttrList
 @onready var person_log: RichTextLabel = $UI/HUD/RightPanel/VBox/PersonPanel/PersonLog
 @onready var world_view: Node2D = $WorldView
 @onready var tick_timer: Timer = $TickTimer
@@ -68,6 +68,7 @@ func _setup_ui_connections() -> void:
 	btn_back.pressed.connect(_on_back_pressed)
 	gang_option.item_selected.connect(_on_gang_selected)
 	member_list.item_selected.connect(_on_member_selected)
+	member_list.item_clicked.connect(_on_member_clicked)
 	tick_timer.timeout.connect(_on_timer_tick)
 
 
@@ -175,6 +176,10 @@ func _on_gang_roster_toggled(pressed: bool) -> void:
 		_ui_log("打开帮派名册")
 		_panel_mode = "roster"
 		_show_roster_mode()
+	elif _panel_mode == "person" and _back_mode == "roster":
+		_ui_log("关闭帮派名册 (保留人物面板)")
+		# 名册按钮仅收起列表，人物详情仍显示
+		pass
 	else:
 		_ui_log("关闭帮派名册")
 		_panel_mode = "event"
@@ -187,11 +192,19 @@ func _on_gang_selected(index: int) -> void:
 	_refresh_member_list(_gang_ids[index])
 
 
-func _on_member_selected(index: int, _click_at: Vector2, _mb: int) -> void:
-	if index < 0:
+func _on_member_selected(index: int) -> void:
+	_open_person_from_member_index(index)
+
+
+func _on_member_clicked(index: int, _at: Vector2, _mb: int) -> void:
+	_open_person_from_member_index(index)
+
+
+func _open_person_from_member_index(index: int) -> void:
+	if index < 0 or index >= member_list.item_count:
 		return
 	var meta: Variant = member_list.get_item_metadata(index)
-	if meta == null:
+	if meta == null or str(meta).is_empty():
 		return
 	var person_id := str(meta)
 	_ui_log("名册选中: %s" % person_id)
@@ -278,6 +291,7 @@ func _fill_person_panel(person_id: String) -> void:
 		person_log.append_text(str(logs[i]) + "\n")
 	if logs.is_empty():
 		person_log.append_text("暂无个人相关日志。\n")
+	# 倒序：最新在顶部
 	person_log.scroll_to_line(0)
 
 
