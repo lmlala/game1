@@ -61,7 +61,7 @@ func _boot_sim() -> void:
 	world_view.setup(sim)
 	world_view.entity_selected.connect(_on_entity_selected)
 	world_view.z_index = 0
-	$UI.z_index = 10
+	$UI.layer = 10
 	_on_reset()
 
 
