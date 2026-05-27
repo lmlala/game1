@@ -1,6 +1,334 @@
-[gd_scene format=3 uid="uid://game1_main"]
+[gd_scene load_steps=3 format=3 uid="uid://game1_main_demo"]
 
-[node name="Main" type="Node2D"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/world_view.gd" id="2"]
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(640, 360)
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="WorldView" type="Node2D" parent="."]
+position = Vector2(8, 52)
+script = ExtResource("2")
+
+[node name="TickTimer" type="Timer" parent="."]
+wait_time = 1.0
+one_shot = false
+autostart = false
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="TopBar" type="HBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -388.0
+offset_bottom = 44.0
+grow_horizontal = 2
+theme_override_constants/separation = 12
+
+[node name="StatusLabel" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+text = "初始化中..."
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+
+[node name="TimeLabel" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+text = "第 0 天"
+
+[node name="MetricsLabel" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "指标"
+clip_text = true
+
+[node name="RightPanel" type="PanelContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 11
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -380.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -64.0
+grow_vertical = 2
+
+[node name="VBox" type="VBoxContainer" parent="UI/HUD/RightPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="BtnBackEvents" type="Button" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+visible = false
+text = "返回江湖事件"
+
+[node name="EventPanel" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="UiLogLabel" type="Label" parent="UI/HUD/RightPanel/VBox/EventPanel"]
+layout_mode = 2
+text = "UI 操作日志"
+theme_override_font_sizes/font_size = 11
+
+[node name="UiLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox/EventPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+size_flags_vertical = 0
+bbcode_enabled = false
+scroll_active = true
+
+[node name="EventLogLabel" type="Label" parent="UI/HUD/RightPanel/VBox/EventPanel"]
+layout_mode = 2
+text = "江湖事件"
+theme_override_font_sizes/font_size = 12
+
+[node name="EventLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox/EventPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 160)
+scroll_active = true
+
+[node name="RosterPanel" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 6
+
+[node name="RosterTitle" type="Label" parent="UI/HUD/RightPanel/VBox/RosterPanel"]
+layout_mode = 2
+text = "帮派人员名册"
+theme_override_font_sizes/font_size = 14
+
+[node name="GangOption" type="OptionButton" parent="UI/HUD/RightPanel/VBox/RosterPanel"]
+layout_mode = 2
+
+[node name="MemberList" type="ItemList" parent="UI/HUD/RightPanel/VBox/RosterPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 200)
+
+[node name="PersonPanel" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="PersonTitle" type="Label" parent="UI/HUD/RightPanel/VBox/PersonPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "人员"
+
+[node name="AttrPanel" type="PanelContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+custom_minimum_size = Vector2(0, 100)
+
+[node name="AttrScroll" type="ScrollContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="AttrMargin" type="MarginContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="AttrList" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrScroll/AttrMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="PersonLogLabel" type="Label" parent="UI/HUD/RightPanel/VBox/PersonPanel"]
+layout_mode = 2
+text = "个人事件 (新→旧)"
+theme_override_font_sizes/font_size = 12
+
+[node name="PersonLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox/PersonPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 2.0
+custom_minimum_size = Vector2(0, 160)
+scroll_active = true
+fit_content = false
+
+
+[node name="EventHistoryPanel" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="HistoryTitle" type="Label" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+text = "事件历史"
+theme_override_font_sizes/font_size = 14
+
+[node name="FilterGang" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="FilterType" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="FilterSeverity" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="FilterEntity" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="EventHistoryList" type="ItemList" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 200)
+
+[node name="EventDetailPanel" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="EventDetailTitle" type="Label" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "事件详情"
+
+[node name="EventAttrPanel" type="PanelContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+custom_minimum_size = Vector2(0, 90)
+
+[node name="EventAttrScroll" type="ScrollContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel/EventAttrPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="EventAttrMargin" type="MarginContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel/EventAttrPanel/EventAttrScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="EventAttrList" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel/EventAttrPanel/EventAttrScroll/EventAttrMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EventDetailLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+size_flags_vertical = 0
+scroll_active = true
+
+[node name="RelatedEventsLabel" type="Label" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+text = "关联事件"
+theme_override_font_sizes/font_size = 12
+
+[node name="RelatedEventsList" type="ItemList" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+custom_minimum_size = Vector2(0, 80)
+
+[node name="ParticipantsLabel" type="Label" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+text = "相关人物/目标"
+theme_override_font_sizes/font_size = 12
+
+[node name="ParticipantsList" type="ItemList" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+custom_minimum_size = Vector2(0, 80)
+
+[node name="BottomBar" type="HBoxContainer" parent="UI/HUD"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -56.0
+offset_right = -388.0
+offset_bottom = -8.0
+grow_horizontal = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="BtnPause" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(72, 40)
+toggle_mode = true
+text = "暂停"
+
+[node name="BtnReset" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(72, 40)
+text = "重置"
+
+[node name="Sep1" type="VSeparator" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+
+[node name="BtnGangRoster" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(88, 40)
+toggle_mode = true
+text = "帮派名册"
+
+[node name="BtnEventHistory" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(72, 40)
+toggle_mode = true
+text = "事件"
+
+[node name="Sep2" type="VSeparator" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+
+[node name="BtnExpand" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(64, 40)
+text = "扩张"
+
+[node name="BtnDefend" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(64, 40)
+text = "防守"
+
+[node name="BtnReward" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(64, 40)
+text = "奖赏"
+
+[node name="BtnPunish" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(64, 40)
+text = "处罚"
+
+[node name="BtnRecruit" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(64, 40)
+text = "招募"

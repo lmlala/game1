@@ -8,10 +8,13 @@ alwaysApply: false
 
 - **入口**: `docs/INDEX.md` — 新增文档必须在此登记
 - **子目录**:
-  - `architecture/` — 分层、边界、决策
+  - `architecture/` — 分层、边界、决策、源码目录结构
+  - `gameplay/` — 玩法目标、世界、规则、Demo 边界
+  - `simulation/` — 事件 schema、日志、指标验收
   - `godot/` — 场景/GDScript 约定
   - `rust/` — crate/godot-rust 约定
   - `dev/` — 搭建、工作流、排错
 - 子目录文档 >5 篇时再建子文件夹 (如 `dev/ci/`)
 - 每篇文首一行 **适用场景**
 - 改目录结构时同步更新 `INDEX.md` 与 `AGENTS.md`
+- 玩法规则变更写入 `docs/gameplay/`, 事件/日志/验收变更写入 `docs/simulation/`

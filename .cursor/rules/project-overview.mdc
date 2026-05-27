@@ -7,11 +7,11 @@ alwaysApply: true
 
 - **Godot** (`godot/`): 场景/UI/资源; 打开 `godot/project.godot`
 - **Rust** (`rust/`, `game1_core`): GDExtension; 构建 `cd rust && cargo build`
-- **文档**: 先读 `docs/INDEX.md`, 再读子目录; Agent 入口 `AGENTS.md`
+- **文档**: 先读 `docs/INDEX.md`, 再读子目录; 玩法看 `docs/gameplay/`, 模拟验收看 `docs/simulation/`; Agent 入口 `AGENTS.md`
 
 ## 职责边界
 
-- Rust: 核心逻辑、数值、可测试纯函数
+- Rust: 核心逻辑、数值、可测试纯函数、事件日志和 Tick 模拟
 - Godot/GDScript: 表现、布局、调用 Rust `#[func]` 的薄胶水
 
 ## 改代码前
