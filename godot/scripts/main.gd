@@ -675,7 +675,7 @@ func _fetch_event_history_filter_meta() -> Dictionary:
 func _fill_filter_option(option: OptionButton, key: String, meta: Dictionary) -> void:
 	if option == null or not is_instance_valid(option):
 		return
-	var block := option.block_signals(true)
+	option.set_block_signals(true)
 	option.clear()
 	var ids_key := "%s_ids" % key
 	var labels_key := "%s_labels" % key
@@ -685,7 +685,7 @@ func _fill_filter_option(option: OptionButton, key: String, meta: Dictionary) ->
 		option.add_item("全部")
 		option.set_item_metadata(0, "*")
 		_event_filter_ids[key] = PackedStringArray(["*"])
-		option.block_signals(block)
+		option.set_block_signals(false)
 		return
 	_event_filter_ids[key] = ids
 	for i in range(ids.size()):
@@ -693,7 +693,7 @@ func _fill_filter_option(option: OptionButton, key: String, meta: Dictionary) ->
 		option.add_item(label)
 		option.set_item_metadata(i, str(ids[i]))
 	option.select(0)
-	option.block_signals(block)
+	option.set_block_signals(false)
 
 
 func _current_filter_id(key: String, option: OptionButton) -> String:
