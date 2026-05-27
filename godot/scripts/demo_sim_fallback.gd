@@ -105,3 +105,19 @@ func queue_punish(_key: String) -> bool:
 func queue_recruit(_budget: int) -> bool:
 	_logs.append("【占位】帮主下令: 招募 预算 %d" % _budget)
 	return true
+
+func get_gangs() -> Array:
+    return [
+        {"id": "gang:black_tiger", "name": "黑虎帮", "member_count": 2, "defeated": false},
+        {"id": "gang:axe_gang", "name": "斧头帮", "member_count": 1, "defeated": false},
+        {"id": "gang:green_dragon", "name": "青龙会", "member_count": 1, "defeated": false},
+    ]
+
+
+func get_persons_by_gang(gang_key: String) -> Array:
+    if gang_key == "gang:black_tiger":
+        return [
+            {"id": "person:demo", "label": "占位侠客 [杂役]", "name": "占位侠客", "role": "杂役", "alive": true},
+            {"id": "person:accountant_black", "label": "铁算盘 [账房]", "name": "铁算盘", "role": "账房", "alive": true},
+        ]
+    return [{"id": "person:demo", "label": "路人 [杂役]", "name": "路人", "role": "杂役", "alive": true}]

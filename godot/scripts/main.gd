@@ -1,43 +1,66 @@
 extends Control
 
-## 模拟核心节点 (Rust DemoController 或 GDScript 占位).
 var sim: Node
 
 @onready var status_label: Label = $UI/HUD/TopBar/StatusLabel
 @onready var time_label: Label = $UI/HUD/TopBar/TimeLabel
 @onready var metrics_label: Label = $UI/HUD/TopBar/MetricsLabel
-@onready var ui_log: RichTextLabel = $UI/HUD/RightPanel/VBox/UiLog
-@onready var event_log: RichTextLabel = $UI/HUD/RightPanel/VBox/EventLog
-@onready var target_title: Label = $UI/HUD/RightPanel/VBox/TargetTitle
-@onready var attr_list: VBoxContainer = $UI/HUD/RightPanel/VBox/AttrList
-@onready var target_log: RichTextLabel = $UI/HUD/RightPanel/VBox/TargetLog
 @onready var btn_back: Button = $UI/HUD/RightPanel/VBox/BtnBackEvents
+@onready var event_panel: VBoxContainer = $UI/HUD/RightPanel/VBox/EventPanel
+@onready var ui_log: RichTextLabel = $UI/HUD/RightPanel/VBox/EventPanel/UiLog
+@onready var event_log: RichTextLabel = $UI/HUD/RightPanel/VBox/EventPanel/EventLog
+@onready var roster_panel: VBoxContainer = $UI/HUD/RightPanel/VBox/RosterPanel
+@onready var gang_option: OptionButton = $UI/HUD/RightPanel/VBox/RosterPanel/GangOption
+@onready var member_list: ItemList = $UI/HUD/RightPanel/VBox/RosterPanel/MemberList
+@onready var person_panel: VBoxContainer = $UI/HUD/RightPanel/VBox/PersonPanel
+@onready var person_title: Label = $UI/HUD/RightPanel/VBox/PersonPanel/PersonTitle
+@onready var attr_list: VBoxContainer = $UI/HUD/RightPanel/VBox/PersonPanel/AttrPanel/AttrMargin/AttrList
+@onready var person_log: RichTextLabel = $UI/HUD/RightPanel/VBox/PersonPanel/PersonLog
 @onready var world_view: Node2D = $WorldView
 @onready var tick_timer: Timer = $TickTimer
+@onready var btn_gang_roster: Button = $UI/HUD/BottomBar/BtnGangRoster
 
 const FALLBACK_SCRIPT := preload("res://scripts/demo_sim_fallback.gd")
+const SIM_CONFIG_PATH := "res://config/sim.cfg"
 
 var _panel_mode := "event"
-var _selected_id := ""
+var _selected_person_id := ""
+var _back_mode := "event"
 var _sim_mode := "unknown"
+var _gang_ids: Array[String] = []
+var _tick_interval_sec := 1.0
 
 
 func _ready() -> void:
+	_load_sim_config()
 	_setup_ui_connections()
-	_ui_log("Main 场景 _ready")
+	_ui_log("Main 场景 _ready, Tick 间隔 %.1fs" % _tick_interval_sec)
 	call_deferred("_boot_sim")
+
+
+func _load_sim_config() -> void:
+	var cfg := ConfigFile.new()
+	var err := cfg.load(SIM_CONFIG_PATH)
+	if err != OK:
+		push_warning("未找到 sim.cfg, 使用默认 Tick 间隔 1s")
+		_tick_interval_sec = 1.0
+	else:
+		_tick_interval_sec = float(cfg.get_value("tick", "interval_sec", 1.0))
+	tick_timer.wait_time = _tick_interval_sec
 
 
 func _setup_ui_connections() -> void:
 	$UI/HUD/BottomBar/BtnPause.toggled.connect(_on_pause_toggled)
-	$UI/HUD/BottomBar/BtnNext.pressed.connect(_on_next_day)
 	$UI/HUD/BottomBar/BtnReset.pressed.connect(_on_reset)
+	btn_gang_roster.toggled.connect(_on_gang_roster_toggled)
 	$UI/HUD/BottomBar/BtnExpand.pressed.connect(_on_expand)
 	$UI/HUD/BottomBar/BtnDefend.pressed.connect(_on_defend)
 	$UI/HUD/BottomBar/BtnReward.pressed.connect(_on_reward)
 	$UI/HUD/BottomBar/BtnPunish.pressed.connect(_on_punish)
 	$UI/HUD/BottomBar/BtnRecruit.pressed.connect(_on_recruit)
-	btn_back.pressed.connect(_show_event_mode)
+	btn_back.pressed.connect(_on_back_pressed)
+	gang_option.item_selected.connect(_on_gang_selected)
+	member_list.item_selected.connect(_on_member_selected)
 	tick_timer.timeout.connect(_on_timer_tick)
 
 
@@ -46,22 +69,20 @@ func _boot_sim() -> void:
 	if sim == null:
 		_sim_mode = "none"
 		status_label.text = "Rust: 未连接"
-		_ui_log("无法创建模拟核心.")
 		return
 	if sim.get_script() == FALLBACK_SCRIPT:
 		_sim_mode = "fallback"
-		status_label.text = "模式: GDScript 占位"
-		_ui_log("警告: Rust 未加载, 使用占位模拟.")
+		status_label.text = "模式: 占位 | 自动 %.1fs" % _tick_interval_sec
 	else:
 		_sim_mode = "rust"
-		status_label.text = "模式: Rust 核心"
-		_ui_log("Rust DemoController 已连接.")
+		status_label.text = "模式: Rust | 自动 %.1fs" % _tick_interval_sec
 	if sim.has_signal("tick_advanced"):
 		sim.tick_advanced.connect(_on_tick_advanced)
 	world_view.setup(sim)
 	world_view.entity_selected.connect(_on_entity_selected)
 	world_view.z_index = 0
 	$UI.layer = 10
+	_init_gang_options()
 	_on_reset()
 
 
@@ -72,14 +93,27 @@ func _ensure_sim() -> Node:
 		var node: Node = ClassDB.instantiate("DemoController")
 		node.name = "DemoController"
 		add_child(node)
-		_ui_log("ClassDB 实例化 DemoController 成功.")
 		return node
-	_ui_log("ClassDB 无 DemoController, 启用 GDScript 占位.")
 	var fallback: Node = Node.new()
 	fallback.name = "DemoController"
 	fallback.set_script(FALLBACK_SCRIPT)
 	add_child(fallback)
 	return fallback
+
+
+func _start_auto_run() -> void:
+	if sim == null:
+		return
+	sim.set_paused(false)
+	$UI/HUD/BottomBar/BtnPause.button_pressed = false
+	tick_timer.wait_time = _tick_interval_sec
+	tick_timer.start()
+
+
+func _stop_auto_run() -> void:
+	tick_timer.stop()
+	if sim:
+		sim.set_paused(true)
 
 
 func _ui_log(message: String) -> void:
@@ -100,44 +134,175 @@ func _on_reset() -> void:
 	if sim == null:
 		return
 	sim.reset_demo(42)
-	tick_timer.stop()
-	$UI/HUD/BottomBar/BtnPause.button_pressed = false
-	sim.set_paused(false)
+	btn_gang_roster.button_pressed = false
+	_panel_mode = "event"
+	_back_mode = "event"
 	_show_event_mode()
 	_refresh_all()
+	_start_auto_run()
 
 
 func _on_pause_toggled(pressed: bool) -> void:
-	_ui_log("点击: 暂停/继续 => %s" % ("暂停" if pressed else "继续"))
+	_ui_log("点击: %s" % ("暂停" if pressed else "继续"))
 	if sim == null:
 		return
-	sim.set_paused(pressed)
 	if pressed:
-		tick_timer.stop()
+		_stop_auto_run()
 	else:
-		tick_timer.start()
+		_start_auto_run()
 	_refresh_header()
 
 
-func _on_next_day() -> void:
-	_ui_log("点击: 下一天")
-	if sim == null:
-		return
-	var ok: bool = sim.advance_tick()
-	_ui_log("advance_tick => %s" % ok)
-	_refresh_all()
-
-
 func _on_timer_tick() -> void:
-	if sim and not sim.is_paused():
-		_ui_log("定时器: 推进 1 tick")
-		sim.advance_tick()
-		_refresh_all()
+	if sim == null or sim.is_paused():
+		return
+	sim.advance_tick()
 
 
 func _on_tick_advanced(tick: int) -> void:
-	_ui_log("信号 tick_advanced: %d" % tick)
 	_refresh_all()
+
+
+func _on_gang_roster_toggled(pressed: bool) -> void:
+	if pressed:
+		_ui_log("打开帮派名册")
+		_panel_mode = "roster"
+		_show_roster_mode()
+	else:
+		_ui_log("关闭帮派名册")
+		_panel_mode = "event"
+		_show_event_mode()
+
+
+func _on_gang_selected(index: int) -> void:
+	if index < 0 or index >= _gang_ids.size():
+		return
+	_refresh_member_list(_gang_ids[index])
+
+
+func _on_member_selected(index: int, _click_at: Vector2, _mb: int) -> void:
+	if index < 0:
+		return
+	var meta: Variant = member_list.get_item_metadata(index)
+	if meta == null:
+		return
+	var person_id := str(meta)
+	_ui_log("名册选中: %s" % person_id)
+	_selected_person_id = person_id
+	_back_mode = "roster"
+	_show_person_mode(person_id)
+
+
+func _on_back_pressed() -> void:
+	if _panel_mode == "person":
+		if _back_mode == "roster":
+			_panel_mode = "roster"
+			_show_roster_mode()
+		else:
+			_panel_mode = "event"
+			btn_gang_roster.button_pressed = false
+			_show_event_mode()
+	elif _panel_mode == "roster":
+		_panel_mode = "event"
+		btn_gang_roster.button_pressed = false
+		_show_event_mode()
+
+
+func _on_entity_selected(entity_id: String) -> void:
+	if not entity_id.begins_with("person:"):
+		return
+	_selected_person_id = entity_id
+	_back_mode = "event"
+	_show_person_mode(entity_id)
+
+
+func _show_event_mode() -> void:
+	_panel_mode = "event"
+	btn_back.visible = false
+	event_panel.visible = true
+	roster_panel.visible = false
+	person_panel.visible = false
+	_refresh_game_log()
+
+
+func _show_roster_mode() -> void:
+	_panel_mode = "roster"
+	btn_back.visible = true
+	btn_back.text = "返回江湖事件"
+	event_panel.visible = false
+	roster_panel.visible = true
+	person_panel.visible = false
+	if gang_option.item_count > 0 and gang_option.selected < 0:
+		gang_option.select(0)
+	_on_gang_selected(gang_option.selected)
+
+
+func _show_person_mode(person_id: String) -> void:
+	_panel_mode = "person"
+	_selected_person_id = person_id
+	btn_back.visible = true
+	btn_back.text = "返回" + ("名册" if _back_mode == "roster" else "江湖事件")
+	event_panel.visible = false
+	roster_panel.visible = false
+	person_panel.visible = true
+	_fill_person_panel(person_id)
+
+
+func _fill_person_panel(person_id: String) -> void:
+	if sim == null:
+		return
+	var panel: Dictionary = sim.get_entity_panel(person_id)
+	person_title.text = str(panel.get("title", person_id))
+	for child in attr_list.get_children():
+		child.queue_free()
+	var attrs: Dictionary = panel.get("attributes", {})
+	for key in attrs.keys():
+		var row := Label.new()
+		row.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		row.text = "%s: %s" % [key, attrs[key]]
+		attr_list.add_child(row)
+	person_log.clear()
+	var logs: PackedStringArray = panel.get("logs", PackedStringArray())
+	for i in range(logs.size()):
+		person_log.append_text(str(logs[i]) + "\n")
+	if logs.is_empty():
+		person_log.append_text("暂无个人相关日志。\n")
+	person_log.scroll_to_line(0)
+
+
+func _init_gang_options() -> void:
+	gang_option.clear()
+	member_list.clear()
+	_gang_ids.clear()
+	if sim == null or not sim.has_method("get_gangs"):
+		return
+	var gangs: Array = sim.get_gangs()
+	for g in gangs:
+		var d: Dictionary = g
+		var gid := str(d.get("id", ""))
+		var name := str(d.get("name", gid))
+		var count := int(d.get("member_count", 0))
+		_gang_ids.append(gid)
+		gang_option.add_item("%s (%d人)" % [name, count])
+	if _gang_ids.size() > 0:
+		gang_option.select(0)
+
+
+func _refresh_member_list(gang_id: String) -> void:
+	member_list.clear()
+	if sim == null or not sim.has_method("get_persons_by_gang"):
+		return
+	var members: Array = sim.get_persons_by_gang(gang_id)
+	var idx := 0
+	for m in members:
+		var d: Dictionary = m
+		var pid := str(d.get("id", ""))
+		var label := str(d.get("label", pid))
+		if not bool(d.get("alive", true)):
+			label += " [身亡]"
+		member_list.add_item(label)
+		member_list.set_item_metadata(idx, pid)
+		idx += 1
 
 
 func _on_expand() -> void:
@@ -146,10 +311,9 @@ func _on_expand() -> void:
 		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("territory", "territory:east_dock"))
-	if _selected_id.begins_with("territory:"):
-		key = _selected_id
-	var ok: bool = sim.queue_expand(key)
-	_ui_log("queue_expand(%s) => %s" % [key, ok])
+	if _selected_person_id.begins_with("territory:"):
+		key = _selected_person_id
+	sim.queue_expand(key)
 
 
 func _on_defend() -> void:
@@ -158,10 +322,7 @@ func _on_defend() -> void:
 		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("territory", "territory:gambling_house"))
-	if _selected_id.begins_with("territory:"):
-		key = _selected_id
-	var ok: bool = sim.queue_defend(key)
-	_ui_log("queue_defend(%s) => %s" % [key, ok])
+	sim.queue_defend(key)
 
 
 func _on_reward() -> void:
@@ -170,10 +331,9 @@ func _on_reward() -> void:
 		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("person", "person:accountant_black"))
-	if _selected_id.begins_with("person:"):
-		key = _selected_id
-	var ok: bool = sim.queue_reward(key, 80)
-	_ui_log("queue_reward(%s) => %s" % [key, ok])
+	if _selected_person_id.begins_with("person:"):
+		key = _selected_person_id
+	sim.queue_reward(key, 80)
 
 
 func _on_punish() -> void:
@@ -182,60 +342,15 @@ func _on_punish() -> void:
 		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("person", "person:accountant_black_2"))
-	if _selected_id.begins_with("person:"):
-		key = _selected_id
-	var ok: bool = sim.queue_punish(key)
-	_ui_log("queue_punish(%s) => %s" % [key, ok])
+	if _selected_person_id.begins_with("person:"):
+		key = _selected_person_id
+	sim.queue_punish(key)
 
 
 func _on_recruit() -> void:
 	_ui_log("点击: 招募")
-	if sim == null:
-		return
-	var ok: bool = sim.queue_recruit(100)
-	_ui_log("queue_recruit => %s" % ok)
-
-
-func _on_entity_selected(entity_id: String) -> void:
-	_ui_log("选中: %s" % entity_id)
-	_selected_id = entity_id
-	_show_target_mode(entity_id)
-
-
-func _show_event_mode() -> void:
-	_panel_mode = "event"
-	ui_log.visible = true
-	event_log.visible = true
-	target_title.visible = false
-	attr_list.visible = false
-	target_log.visible = false
-	btn_back.visible = false
-	_refresh_game_log()
-
-
-func _show_target_mode(entity_id: String) -> void:
-	if sim == null:
-		return
-	_panel_mode = "target"
-	ui_log.visible = true
-	event_log.visible = false
-	target_title.visible = true
-	attr_list.visible = true
-	target_log.visible = true
-	btn_back.visible = true
-	var panel: Dictionary = sim.get_entity_panel(entity_id)
-	target_title.text = str(panel.get("title", entity_id))
-	for child in attr_list.get_children():
-		child.queue_free()
-	var attrs: Dictionary = panel.get("attributes", {})
-	for key in attrs.keys():
-		var row := Label.new()
-		row.text = "%s: %s" % [key, attrs[key]]
-		attr_list.add_child(row)
-	var logs: PackedStringArray = panel.get("logs", PackedStringArray())
-	target_log.clear()
-	for line in logs:
-		target_log.append_text(line + "\n")
+	if sim:
+		sim.queue_recruit(100)
 
 
 func _refresh_header() -> void:
@@ -257,8 +372,13 @@ func _refresh_game_log() -> void:
 
 func _refresh_all() -> void:
 	_refresh_header()
-	if _panel_mode == "event":
-		_refresh_game_log()
-	elif _selected_id != "":
-		_show_target_mode(_selected_id)
+	match _panel_mode:
+		"event":
+			_refresh_game_log()
+		"roster":
+			if gang_option.selected >= 0 and gang_option.selected < _gang_ids.size():
+				_refresh_member_list(_gang_ids[gang_option.selected])
+		"person":
+			if _selected_person_id != "":
+				_fill_person_panel(_selected_person_id)
 	world_view.refresh(sim)

@@ -45,6 +45,11 @@ impl EventStore {
     }
 
     pub fn logs_for_entity(&self, entity_id: &str, limit: usize) -> Vec<String> {
+        self.logs_for_entity_newest_first(entity_id, limit)
+    }
+
+
+    pub fn logs_for_entity_newest_first(&self, entity_id: &str, limit: usize) -> Vec<String> {
         self.events
             .iter()
             .filter(|e| {
@@ -56,9 +61,6 @@ impl EventStore {
             .filter_map(|e| e.log_text.clone())
             .rev()
             .take(limit)
-            .collect::<Vec<_>>()
-            .into_iter()
-            .rev()
             .collect()
     }
 

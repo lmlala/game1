@@ -103,7 +103,7 @@ impl DemoController {
             arr.push(line.as_str());
         }
         if arr.is_empty() {
-            arr.push("【等待】江湖尚未开始躁动, 点击下一天或继续。");
+            arr.push("【等待】江湖尚未开始躁动, 自动推进或点击继续。");
         }
         arr
     }
@@ -234,6 +234,56 @@ impl DemoController {
             gang_id: player_gang_id(),
             budget,
         })
+    }
+
+
+    #[func]
+    fn get_gangs(&self) -> Array<Variant> {
+        let mut gangs: Vec<_> = self.runner.world.gangs.values().collect();
+        gangs.sort_by(|a, b| a.id.as_str().cmp(b.id.as_str()));
+        let mut arr = Array::<Variant>::new();
+        for gang in gangs {
+            let mut d = VarDict::new();
+            d.set("id", gang.id.as_str());
+            d.set("name", gang.name.as_str());
+            d.set("member_count", gang.member_ids.len() as i32);
+            d.set("defeated", gang.defeated);
+            arr.push(&Variant::from(d));
+        }
+        arr
+    }
+
+    #[func]
+    fn get_persons_by_gang(&self, gang_key: GString) -> Array<Variant> {
+        let gang_id = if gang_key.to_string().starts_with("gang:") {
+            EntityId::new(gang_key.to_string())
+        } else {
+            EntityId::gang(&gang_key.to_string())
+        };
+        let mut arr = Array::<Variant>::new();
+        let Ok(gang) = self.runner.world.gang(&gang_id) else {
+            return arr;
+        };
+        let mut member_ids = gang.member_ids.clone();
+        member_ids.sort_by(|a, b| a.as_str().cmp(b.as_str()));
+        for pid in member_ids {
+            let Some(person) = self.runner.world.persons.get(pid.as_str()) else {
+                continue;
+            };
+            let mut d = VarDict::new();
+            d.set("id", person.id.as_str());
+            d.set("label", format!("{} [{}]", person.name, person.role).as_str());
+            d.set("name", person.name.as_str());
+            d.set("role", person.role.as_str());
+            d.set("alive", person.alive);
+            arr.push(&Variant::from(d));
+        }
+        arr
+    }
+
+    #[func]
+    fn get_tick_interval_sec(&self) -> f64 {
+        1.0
     }
 
     #[func]
