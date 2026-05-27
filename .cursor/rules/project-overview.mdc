@@ -1,0 +1,21 @@
+---
+description: game1 总览 — Godot UI + Rust 核心, 文档索引入口
+alwaysApply: true
+---
+
+# game1 项目
+
+- **Godot** (`godot/`): 场景/UI/资源; 打开 `godot/project.godot`
+- **Rust** (`rust/`, `game1_core`): GDExtension; 构建 `cd rust && cargo build`
+- **文档**: 先读 `docs/INDEX.md`, 再读子目录; Agent 入口 `AGENTS.md`
+
+## 职责边界
+
+- Rust: 核心逻辑、数值、可测试纯函数
+- Godot/GDScript: 表现、布局、调用 Rust `#[func]` 的薄胶水
+
+## 改代码前
+
+1. 确认改的是 `godot/` 还是 `rust/`
+2. Rust 类变更后必须重新 `cargo build`
+3. 架构/流程问题查 `docs/architecture/`, `docs/dev/`

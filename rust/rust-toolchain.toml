@@ -1,0 +1,4 @@
+[toolchain]
+channel = "stable"
+# godot 0.5.x 需要 rustc >= 1.94
+min_version = "1.94.0"

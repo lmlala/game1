@@ -1,0 +1,12 @@
+[package]
+name = "game1_core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.94"
+description = "game1 core logic (Godot GDExtension)"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+godot = "0.5.3"

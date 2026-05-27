@@ -1,0 +1,24 @@
+---
+description: Rust GDExtension 与 godot-rust 约定
+globs: rust/**/*
+alwaysApply: false
+---
+
+# Rust 层 (game1_core)
+
+- Crate: `game1_core`, `cdylib`, 入口 `#[gdextension]` + `ExtensionLibrary`
+- 新 Godot 类: `#[derive(GodotClass)]`, `#[class(base=...)]`, `#[godot_api]`
+- 纯逻辑放 `rust/src/core/` (无 Godot 依赖); 节点适配放 `rust/src/nodes/`
+- 工具链 **rustc >= 1.94**; 构建 `cargo build`
+- 详规: `docs/rust/conventions.md`
+
+## API 暴露
+
+- 引擎生命周期: `impl I{Base} for Class`
+- GDScript 可调用: `#[func]`, 信号: `#[signal]`
+- 访问基类用 `base()` / `base_mut()`
+
+## 禁止
+
+- 静默 fallback 掩盖缺失数据
+- 在 GDScript 重复 Rust 已有逻辑

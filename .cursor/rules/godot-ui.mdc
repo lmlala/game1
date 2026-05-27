@@ -1,0 +1,17 @@
+---
+description: Godot 场景、GDScript、资源约定
+globs: godot/**/*
+alwaysApply: false
+---
+
+# Godot 层 (game1)
+
+- 场景放 `godot/scenes/`, 脚本放 `godot/scripts/`, 资源放 `godot/assets/`
+- GDScript **不写**核心游戏规则; 调用 Rust 暴露的 API
+- 挂载 Rust 节点: 放置对应 base 节点 → Change Type → Rust 类 (如 `Player`)
+- 详规: `docs/godot/conventions.md`
+
+## 注意
+
+- 勿改 `../rust/target/` 或 `.gdextension` 中的库路径除非 crate 更名
+- `.godot/` 为缓存, 不提交

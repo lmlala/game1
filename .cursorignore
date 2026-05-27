@@ -1,0 +1,8 @@
+# 减小索引噪音, 保留 docs/ 与源码
+rust/target/
+**/.godot/
+.import/
+*.import
+export/
+build/
+.DS_Store

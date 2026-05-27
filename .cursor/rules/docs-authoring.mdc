@@ -1,0 +1,17 @@
+---
+description: docs/ 目录结构与文档维护
+globs: docs/**/*
+alwaysApply: false
+---
+
+# 文档 (docs/)
+
+- **入口**: `docs/INDEX.md` — 新增文档必须在此登记
+- **子目录**:
+  - `architecture/` — 分层、边界、决策
+  - `godot/` — 场景/GDScript 约定
+  - `rust/` — crate/godot-rust 约定
+  - `dev/` — 搭建、工作流、排错
+- 子目录文档 >5 篇时再建子文件夹 (如 `dev/ci/`)
+- 每篇文首一行 **适用场景**
+- 改目录结构时同步更新 `INDEX.md` 与 `AGENTS.md`
