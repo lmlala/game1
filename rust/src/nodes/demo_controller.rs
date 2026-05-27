@@ -286,6 +286,54 @@ impl DemoController {
         1.0
     }
 
+
+    /// Godot 友好: 帮派下拉列表 (ids + labels 平行数组)
+    #[func]
+    fn get_gang_roster_meta(&self) -> VarDict {
+        let mut gangs: Vec<_> = self.runner.world.gangs.values().collect();
+        gangs.sort_by(|a, b| a.id.as_str().cmp(b.id.as_str()));
+        let mut ids = PackedStringArray::new();
+        let mut labels = PackedStringArray::new();
+        for gang in gangs {
+            if gang.defeated {
+                continue;
+            }
+            ids.push(gang.id.as_str());
+            labels.push(format!("{} ({}人)", gang.name, gang.member_ids.len()).as_str());
+        }
+        let mut d = VarDict::new();
+        d.set("ids", &ids);
+        d.set("labels", &labels);
+        d
+    }
+
+    /// Godot 友好: 指定帮派成员列表
+    #[func]
+    fn get_member_roster_for_gang(&self, gang_key: GString) -> VarDict {
+        let gang_id = parse_gang_key(&gang_key.to_string());
+        let mut ids = PackedStringArray::new();
+        let mut labels = PackedStringArray::new();
+        if let Ok(gang) = self.runner.world.gang(&gang_id) {
+            let mut member_ids = gang.member_ids.clone();
+            member_ids.sort_by(|a, b| a.as_str().cmp(b.as_str()));
+            for pid in member_ids {
+                let Some(person) = self.runner.world.persons.get(pid.as_str()) else {
+                    continue;
+                };
+                let mut label = format!("{} [{}]", person.name, person.role);
+                if !person.alive {
+                    label.push_str(" [身亡]");
+                }
+                ids.push(person.id.as_str());
+                labels.push(label.as_str());
+            }
+        }
+        let mut d = VarDict::new();
+        d.set("ids", &ids);
+        d.set("labels", &labels);
+        d
+    }
+
     #[func]
     fn get_default_selection(&self) -> VarDict {
         let mut d = VarDict::new();
@@ -308,6 +356,15 @@ impl DemoController {
     }
 }
 
+
+
+fn parse_gang_key(key: &str) -> EntityId {
+    if key.starts_with("gang:") {
+        EntityId::new(key)
+    } else {
+        EntityId::gang(key)
+    }
+}
 
 fn parse_person_key(key: &str) -> EntityId {
     if key.starts_with("person:") {

@@ -232,9 +232,13 @@ func _show_roster_mode() -> void:
 	event_panel.visible = false
 	roster_panel.visible = true
 	person_panel.visible = false
-	if gang_option.item_count > 0 and gang_option.selected < 0:
-		gang_option.select(0)
-	_on_gang_selected(gang_option.selected)
+	_init_gang_options()
+	if gang_option.item_count > 0:
+		var idx := gang_option.selected
+		if idx < 0:
+			idx = 0
+			gang_option.select(0)
+		_on_gang_selected(idx)
 
 
 func _show_person_mode(person_id: String) -> void:
@@ -274,35 +278,51 @@ func _init_gang_options() -> void:
 	gang_option.clear()
 	member_list.clear()
 	_gang_ids.clear()
-	if sim == null or not sim.has_method("get_gangs"):
+	if sim == null:
 		return
-	var gangs: Array = sim.get_gangs()
-	for g in gangs:
-		var d: Dictionary = g
-		var gid := str(d.get("id", ""))
-		var name := str(d.get("name", gid))
-		var count := int(d.get("member_count", 0))
-		_gang_ids.append(gid)
-		gang_option.add_item("%s (%d人)" % [name, count])
+	var meta: Dictionary = _call_roster_meta("get_gang_roster_meta")
+	var ids: PackedStringArray = meta.get("ids", PackedStringArray())
+	var labels: PackedStringArray = meta.get("labels", PackedStringArray())
+	if ids.is_empty():
+		_ui_log("警告: 帮派列表为空, 请确认 Rust 已 build 并重启 Godot")
+		return
+	for i in range(ids.size()):
+		_gang_ids.append(str(ids[i]))
+		var label := str(labels[i]) if i < labels.size() else str(ids[i])
+		gang_option.add_item(label)
 	if _gang_ids.size() > 0:
 		gang_option.select(0)
+		_refresh_member_list(_gang_ids[0])
+
+
+func _call_roster_meta(method: String, arg: String = "") -> Dictionary:
+	if sim == null:
+		return {}
+	var result: Variant
+	if arg.is_empty():
+		result = sim.call(method)
+	else:
+		result = sim.call(method, arg)
+	if result is Dictionary:
+		return result
+	if typeof(result) == TYPE_DICTIONARY:
+		return result
+	_ui_log("警告: %s 返回类型异常: %s" % [method, typeof(result)])
+	return {}
 
 
 func _refresh_member_list(gang_id: String) -> void:
 	member_list.clear()
-	if sim == null or not sim.has_method("get_persons_by_gang"):
+	if sim == null or gang_id.is_empty():
 		return
-	var members: Array = sim.get_persons_by_gang(gang_id)
-	var idx := 0
-	for m in members:
-		var d: Dictionary = m
-		var pid := str(d.get("id", ""))
-		var label := str(d.get("label", pid))
-		if not bool(d.get("alive", true)):
-			label += " [身亡]"
+	var meta: Dictionary = _call_roster_meta("get_member_roster_for_gang", gang_id)
+	var ids: PackedStringArray = meta.get("ids", PackedStringArray())
+	var labels: PackedStringArray = meta.get("labels", PackedStringArray())
+	for i in range(ids.size()):
+		var pid := str(ids[i])
+		var label := str(labels[i]) if i < labels.size() else pid
 		member_list.add_item(label)
-		member_list.set_item_metadata(idx, pid)
-		idx += 1
+		member_list.set_item_metadata(i, pid)
 
 
 func _on_expand() -> void:

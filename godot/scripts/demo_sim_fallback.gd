@@ -115,6 +115,30 @@ func get_gangs() -> Array:
 	]
 
 
+func get_gang_roster_meta() -> Dictionary:
+	return {
+		"ids": PackedStringArray([
+			"gang:black_tiger",
+			"gang:axe_gang",
+			"gang:green_dragon",
+		]),
+		"labels": PackedStringArray([
+			"黑虎帮 (9人)",
+			"斧头帮 (9人)",
+			"青龙会 (9人)",
+		]),
+	}
+
+
+func get_member_roster_for_gang(gang_key: String) -> Dictionary:
+	var ids := PackedStringArray()
+	var labels := PackedStringArray()
+	for m in get_persons_by_gang(gang_key):
+		ids.append(str(m.get("id", "")))
+		labels.append(str(m.get("label", "")))
+	return {"ids": ids, "labels": labels}
+
+
 func get_persons_by_gang(gang_key: String) -> Array:
 	if gang_key == "gang:black_tiger":
 		return [
