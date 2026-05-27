@@ -5,12 +5,8 @@
 // Email: lmlala@aliyun.com
 // Copyright (c) 2025 FiuAI
 
-mod core;
-mod nodes;
+mod types;
+mod store;
 
-use godot::prelude::*;
-
-struct Game1Extension;
-
-#[gdextension]
-unsafe impl ExtensionLibrary for Game1Extension {}
+pub use store::EventStore;
+pub use types::{EventSeverity, EventType, GameEvent};

@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3 uid="uid://entity_token"]
+
+[ext_resource type="Script" path="res://scripts/entity_token.gd" id="1"]
+
+[node name="EntityToken" type="Area2D"]
+input_pickable = true
+script = ExtResource("1")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+offset_right = 40.0
+offset_bottom = 20.0
+
+[node name="Label" type="Label" parent="."]
+theme_override_font_sizes/font_size = 11
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]

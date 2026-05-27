@@ -5,12 +5,6 @@
 // Email: lmlala@aliyun.com
 // Copyright (c) 2025 FiuAI
 
-mod core;
-mod nodes;
+mod demo_v1;
 
-use godot::prelude::*;
-
-struct Game1Extension;
-
-#[gdextension]
-unsafe impl ExtensionLibrary for Game1Extension {}
+pub use demo_v1::{build_demo_v1, player_gang_id};

@@ -5,12 +5,10 @@
 // Email: lmlala@aliyun.com
 // Copyright (c) 2025 FiuAI
 
-mod core;
-mod nodes;
+mod commands;
+mod metrics;
+mod runner;
 
-use godot::prelude::*;
-
-struct Game1Extension;
-
-#[gdextension]
-unsafe impl ExtensionLibrary for Game1Extension {}
+pub use commands::PlayerCommand;
+pub use metrics::MetricsSnapshot;
+pub use runner::SimRunner;

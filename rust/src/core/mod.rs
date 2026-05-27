@@ -5,12 +5,11 @@
 // Email: lmlala@aliyun.com
 // Copyright (c) 2025 FiuAI
 
-mod core;
-mod nodes;
-
-use godot::prelude::*;
-
-struct Game1Extension;
-
-#[gdextension]
-unsafe impl ExtensionLibrary for Game1Extension {}
+pub mod content;
+pub mod error;
+pub mod events;
+pub mod ids;
+pub mod logging;
+pub mod rules;
+pub mod sim;
+pub mod world;

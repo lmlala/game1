@@ -10,3 +10,4 @@ crate-type = ["cdylib"]
 
 [dependencies]
 godot = "0.5.3"
+rand = "0.8"

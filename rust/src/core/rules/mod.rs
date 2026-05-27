@@ -5,12 +5,6 @@
 // Email: lmlala@aliyun.com
 // Copyright (c) 2025 FiuAI
 
-mod core;
-mod nodes;
+mod pipeline;
 
-use godot::prelude::*;
-
-struct Game1Extension;
-
-#[gdextension]
-unsafe impl ExtensionLibrary for Game1Extension {}
+pub use pipeline::run_tick_systems;

@@ -1,6 +1,130 @@
-[gd_scene format=3 uid="uid://game1_main"]
+[gd_scene load_steps=3 format=3 uid="uid://game1_main_demo"]
 
-[node name="Main" type="Node2D"]
+[ext_resource type="Script" path="res://scripts/main.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/world_view.gd" id="2"]
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(640, 360)
+[node name="Main" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="DemoController" type="DemoController" parent="."]
+
+[node name="WorldView" type="Node2D" parent="."]
+position = Vector2(0, 48)
+script = ExtResource("2")
+
+[node name="TickTimer" type="Timer" parent="."]
+wait_time = 1.2
+one_shot = false
+
+[node name="UI" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UI"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TopBar" type="HBoxContainer" parent="UI/HUD"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = 1270.0
+offset_bottom = 44.0
+theme_override_constants/separation = 12
+
+[node name="TimeLabel" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+text = "第 0 天"
+
+[node name="MetricsLabel" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "指标"
+
+[node name="BtnPause" type="Button" parent="UI/HUD/TopBar"]
+layout_mode = 2
+toggle_mode = true
+text = "暂停"
+
+[node name="BtnNext" type="Button" parent="UI/HUD/TopBar"]
+layout_mode = 2
+text = "下一天"
+
+[node name="BtnReset" type="Button" parent="UI/HUD/TopBar"]
+layout_mode = 2
+text = "重置"
+
+[node name="ActionBar" type="HBoxContainer" parent="UI/HUD"]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 48.0
+offset_right = 900.0
+offset_bottom = 84.0
+theme_override_constants/separation = 8
+
+[node name="BtnExpand" type="Button" parent="UI/HUD/ActionBar"]
+layout_mode = 2
+text = "扩张"
+
+[node name="BtnDefend" type="Button" parent="UI/HUD/ActionBar"]
+layout_mode = 2
+text = "防守"
+
+[node name="BtnReward" type="Button" parent="UI/HUD/ActionBar"]
+layout_mode = 2
+text = "奖赏"
+
+[node name="BtnPunish" type="Button" parent="UI/HUD/ActionBar"]
+layout_mode = 2
+text = "处罚"
+
+[node name="BtnRecruit" type="Button" parent="UI/HUD/ActionBar"]
+layout_mode = 2
+text = "招募"
+
+[node name="RightPanel" type="PanelContainer" parent="UI/HUD"]
+layout_mode = 0
+offset_left = 900.0
+offset_top = 8.0
+offset_right = 1272.0
+offset_bottom = 712.0
+
+[node name="VBox" type="VBoxContainer" parent="UI/HUD/RightPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="BtnBackEvents" type="Button" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+visible = false
+text = "返回事件日志"
+
+[node name="TargetTitle" type="Label" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+visible = false
+text = "目标"
+
+[node name="AttrList" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+visible = false
+
+[node name="EventLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 600)
+fit_content = false
+scroll_active = true
+
+[node name="TargetLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+visible = false
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 400)
+scroll_active = true
