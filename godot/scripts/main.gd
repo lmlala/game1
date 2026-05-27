@@ -23,6 +23,13 @@ var sim: Node
 const FALLBACK_SCRIPT: GDScript = preload("res://scripts/demo_sim_fallback.gd")
 const SIM_CONFIG_PATH := "res://config/sim.cfg"
 
+const DEFAULT_GANG_ROSTER = [
+	{"id": "gang:black_tiger", "name": "黑虎帮"},
+	{"id": "gang:axe_gang", "name": "斧头帮"},
+	{"id": "gang:green_dragon", "name": "青龙会"},
+]
+
+
 var _panel_mode := "event"
 var _selected_person_id := ""
 var _back_mode := "event"
@@ -280,7 +287,7 @@ func _init_gang_options() -> void:
 	_gang_ids.clear()
 	if sim == null:
 		return
-	var meta: Dictionary = _call_roster_meta("get_gang_roster_meta")
+	var meta: Dictionary = _fetch_gang_roster_meta()
 	var ids: PackedStringArray = meta.get("ids", PackedStringArray())
 	var labels: PackedStringArray = meta.get("labels", PackedStringArray())
 	if ids.is_empty():
@@ -295,27 +302,144 @@ func _init_gang_options() -> void:
 		_refresh_member_list(_gang_ids[0])
 
 
-func _call_roster_meta(method: String, arg: String = "") -> Dictionary:
+func _safe_has_method(method: String) -> bool:
+	if sim == null:
+		return false
+	if sim.has_method(method):
+		return true
+	# GDScript 占位脚本
+	if sim.get_script() == FALLBACK_SCRIPT:
+		return true
+	return false
+
+
+func _fetch_gang_roster_meta() -> Dictionary:
 	if sim == null:
 		return {}
-	var result: Variant
-	if arg.is_empty():
-		result = sim.call(method)
-	else:
-		result = sim.call(method, arg)
-	if result is Dictionary:
-		return result
-	if typeof(result) == TYPE_DICTIONARY:
-		return result
-	_ui_log("警告: %s 返回类型异常: %s" % [method, typeof(result)])
-	return {}
+	# 1) GDScript 占位
+	if sim.get_script() == FALLBACK_SCRIPT:
+		return sim.get_gang_roster_meta()
+	# 2) Rust 新 API (需重新 build)
+	if _safe_has_method("get_gang_roster_meta"):
+		var r: Variant = sim.call("get_gang_roster_meta")
+		if r is Dictionary:
+			return r
+	# 3) Rust 旧 API get_gangs
+	if _safe_has_method("get_gangs"):
+		var built := _gang_meta_from_get_gangs()
+		if not built.get("ids", PackedStringArray()).is_empty():
+			return built
+	# 4) 从 get_entities("person") 统计
+	var from_entities := _gang_meta_from_entities()
+	if not from_entities.get("ids", PackedStringArray()).is_empty():
+		return from_entities
+	# 5) 写死默认三帮
+	return _gang_meta_from_defaults()
+
+
+func _gang_meta_from_get_gangs() -> Dictionary:
+	var ids := PackedStringArray()
+	var labels := PackedStringArray()
+	var gangs: Variant = sim.call("get_gangs")
+	if gangs == null or not (gangs is Array):
+		return {"ids": ids, "labels": labels}
+	for g in gangs:
+		var d: Dictionary = g if g is Dictionary else {}
+		var gid := str(d.get("id", ""))
+		if gid.is_empty():
+			continue
+		var name := str(d.get("name", gid))
+		var count := int(d.get("member_count", 0))
+		ids.append(gid)
+		labels.append("%s (%d人)" % [name, count])
+	return {"ids": ids, "labels": labels}
+
+
+func _gang_meta_from_entities() -> Dictionary:
+	var ids := PackedStringArray()
+	var labels := PackedStringArray()
+	if not _safe_has_method("get_entities"):
+		return {"ids": ids, "labels": labels}
+	var persons: Variant = sim.call("get_entities", "person")
+	if persons == null or not (persons is Array):
+		return {"ids": ids, "labels": labels}
+	var counts: Dictionary = {}
+	for g in DEFAULT_GANG_ROSTER:
+		counts[str(g["id"])] = 0
+	for p in persons:
+		var d: Dictionary = p if p is Dictionary else {}
+		var gid := str(d.get("gang_id", ""))
+		if counts.has(gid):
+			counts[gid] = int(counts[gid]) + 1
+	for g in DEFAULT_GANG_ROSTER:
+		var gid := str(g["id"])
+		var name := str(g["name"])
+		var n := int(counts.get(gid, 0))
+		ids.append(gid)
+		labels.append("%s (%d人)" % [name, n])
+	return {"ids": ids, "labels": labels}
+
+
+func _gang_meta_from_defaults() -> Dictionary:
+	var ids := PackedStringArray()
+	var labels := PackedStringArray()
+	for g in DEFAULT_GANG_ROSTER:
+		ids.append(str(g["id"]))
+		labels.append(str(g["name"]))
+	return {"ids": ids, "labels": labels}
+
+
+func _fetch_member_roster_meta(gang_id: String) -> Dictionary:
+	if sim == null or gang_id.is_empty():
+		return {}
+	if sim.get_script() == FALLBACK_SCRIPT:
+		return sim.get_member_roster_for_gang(gang_id)
+	if _safe_has_method("get_member_roster_for_gang"):
+		var r: Variant = sim.call("get_member_roster_for_gang", gang_id)
+		if r is Dictionary:
+			return r
+	if _safe_has_method("get_persons_by_gang"):
+		var built := _member_meta_from_get_persons(gang_id)
+		if not built.get("ids", PackedStringArray()).is_empty():
+			return built
+	return _member_meta_from_entities(gang_id)
+
+
+func _member_meta_from_get_persons(gang_id: String) -> Dictionary:
+	var ids := PackedStringArray()
+	var labels := PackedStringArray()
+	var members: Variant = sim.call("get_persons_by_gang", gang_id)
+	if members == null or not (members is Array):
+		return {"ids": ids, "labels": labels}
+	for m in members:
+		var d: Dictionary = m if m is Dictionary else {}
+		ids.append(str(d.get("id", "")))
+		labels.append(str(d.get("label", str(d.get("id", "")))))
+	return {"ids": ids, "labels": labels}
+
+
+func _member_meta_from_entities(gang_id: String) -> Dictionary:
+	var ids := PackedStringArray()
+	var labels := PackedStringArray()
+	if not _safe_has_method("get_entities"):
+		return {"ids": ids, "labels": labels}
+	var persons: Variant = sim.call("get_entities", "person")
+	if persons == null or not (persons is Array):
+		return {"ids": ids, "labels": labels}
+	for p in persons:
+		var d: Dictionary = p if p is Dictionary else {}
+		if str(d.get("gang_id", "")) != gang_id:
+			continue
+		ids.append(str(d.get("id", "")))
+		labels.append(str(d.get("label", str(d.get("id", "")))))
+	return {"ids": ids, "labels": labels}
 
 
 func _refresh_member_list(gang_id: String) -> void:
 	member_list.clear()
 	if sim == null or gang_id.is_empty():
 		return
-	var meta: Dictionary = _call_roster_meta("get_member_roster_for_gang", gang_id)
+	var meta: Dictionary = _fetch_member_roster_meta(gang_id)
 	var ids: PackedStringArray = meta.get("ids", PackedStringArray())
 	var labels: PackedStringArray = meta.get("labels", PackedStringArray())
 	for i in range(ids.size()):
