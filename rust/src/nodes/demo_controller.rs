@@ -334,6 +334,36 @@ impl DemoController {
         d
     }
 
+
+    #[func]
+    fn get_event_history_filter_meta(&self) -> VarDict {
+        crate::nodes::event_history_api::build_filter_meta(&self.runner)
+    }
+
+    #[func]
+    fn query_event_history(
+        &self,
+        gang_id: GString,
+        event_type: GString,
+        severity: GString,
+        entity_id: GString,
+        limit: i32,
+    ) -> Array<Variant> {
+        crate::nodes::event_history_api::query_history(
+            &self.runner,
+            &gang_id.to_string(),
+            &event_type.to_string(),
+            &severity.to_string(),
+            &entity_id.to_string(),
+            limit,
+        )
+    }
+
+    #[func]
+    fn get_event_detail(&self, event_id: GString) -> VarDict {
+        crate::nodes::event_history_api::build_event_detail(&self.runner, &event_id.to_string())
+    }
+
     #[func]
     fn get_default_selection(&self) -> VarDict {
         let mut d = VarDict::new();

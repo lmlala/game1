@@ -15,6 +15,7 @@ func _ready() -> void:
 func reset_demo(_seed: int) -> void:
 	_tick = 0
 	_paused = false
+	_fallback_events = []
 	_logs = PackedStringArray([
 		"【占位】Rust 扩展未加载, 当前为 GDScript 演示数据.",
 		"【占位】请在项目根执行 ./scripts/build-rust.sh 后重启 Godot.",
@@ -166,3 +167,108 @@ func get_persons_by_gang(gang_key: String) -> Array:
 			"alive": true,
 		},
 	]
+
+var _fallback_events: Array = []
+
+
+func _make_fallback_events() -> Array:
+	return [
+		{
+			"id": "evt-001",
+			"tick": 1,
+			"type": "PlayerCommandQueued",
+			"type_label": "帮主号令",
+			"severity": "normal",
+			"severity_label": "普通",
+			"summary": "【占位】帮主下令: 奖赏",
+			"log": "【第1天】帮主下令: 奖赏",
+			"attributes": {"command": "奖赏"},
+			"actors": ["gang:black_tiger"],
+			"targets": ["person:demo"],
+			"participants": [
+				{"id": "person:demo", "label": "占位侠客 [杂役]", "kind": "person"},
+			],
+			"related_events": [],
+		},
+		{
+			"id": "evt-002",
+			"tick": 2,
+			"type": "RumorSpread",
+			"type_label": "流言",
+			"severity": "minor",
+			"severity_label": "琐碎",
+			"summary": "【占位】江湖传言: 黑虎帮账房昨夜未归",
+			"log": "【第2天】江湖传言: 黑虎帮账房昨夜未归",
+			"attributes": {"topic": "账房失踪"},
+			"actors": ["gang:black_tiger"],
+			"targets": [],
+			"participants": [
+				{"id": "gang:black_tiger", "label": "黑虎帮", "kind": "gang"},
+			],
+			"related_events": [
+				{
+					"id": "evt-001",
+					"tick": 1,
+					"type_label": "帮主号令",
+					"summary": "【占位】帮主下令: 奖赏",
+				},
+			],
+		},
+	]
+
+
+func get_event_history_filter_meta() -> Dictionary:
+	return {
+		"gang_ids": PackedStringArray(["*", "gang:black_tiger", "gang:axe_gang"]),
+		"gang_labels": PackedStringArray(["全部帮派", "黑虎帮", "斧头帮"]),
+		"type_ids": PackedStringArray(["*", "PlayerCommandQueued", "RumorSpread"]),
+		"type_labels": PackedStringArray(["全部类型", "帮主号令", "流言"]),
+		"severity_ids": PackedStringArray(["*", "normal", "minor"]),
+		"severity_labels": PackedStringArray(["全部级别", "普通", "琐碎"]),
+		"entity_ids": PackedStringArray(["*", "person:demo"]),
+		"entity_labels": PackedStringArray(["全部相关人", "占位侠客 [杂役]"]),
+	}
+
+
+func query_event_history(
+	gang_id: String,
+	event_type: String,
+	severity: String,
+	entity_id: String,
+	limit: int,
+) -> Array:
+	if _fallback_events.is_empty():
+		_fallback_events = _make_fallback_events()
+	var out: Array = []
+	for e in _fallback_events:
+		if gang_id != "*" and gang_id not in e.get("actors", []):
+			if gang_id != "gang:black_tiger":
+				continue
+		if event_type != "*" and str(e.get("type", "")) != event_type:
+			continue
+		if severity != "*" and str(e.get("severity", "")) != severity:
+			continue
+		if entity_id != "*":
+			var hit := false
+			for p in e.get("participants", []):
+				if str(p.get("id", "")) == entity_id:
+					hit = true
+					break
+			if not hit:
+				continue
+		out.append(e)
+		if out.size() >= limit:
+			break
+	return out
+
+
+func get_event_detail(event_id: String) -> Dictionary:
+	if _fallback_events.is_empty():
+		_fallback_events = _make_fallback_events()
+	for e in _fallback_events:
+		if str(e.get("id", "")) == event_id:
+			var d: Dictionary = e.duplicate(true)
+			d["found"] = true
+			d["title"] = "第%d天 · %s" % [int(d.get("tick", 0)), str(d.get("type_label", ""))]
+			return d
+	return {"found": false, "title": "未找到事件"}

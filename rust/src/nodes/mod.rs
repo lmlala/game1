@@ -8,3 +8,4 @@
 mod demo_controller;
 
 pub use demo_controller::DemoController;
+mod event_history_api;

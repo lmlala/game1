@@ -174,6 +174,97 @@ custom_minimum_size = Vector2(0, 160)
 scroll_active = true
 fit_content = false
 
+
+[node name="EventHistoryPanel" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="HistoryTitle" type="Label" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+text = "事件历史"
+theme_override_font_sizes/font_size = 14
+
+[node name="FilterGang" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="FilterType" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="FilterSeverity" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="FilterEntity" type="OptionButton" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+
+[node name="EventHistoryList" type="ItemList" parent="UI/HUD/RightPanel/VBox/EventHistoryPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+custom_minimum_size = Vector2(0, 200)
+
+[node name="EventDetailPanel" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 4
+
+[node name="EventDetailTitle" type="Label" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 15
+text = "事件详情"
+
+[node name="EventAttrPanel" type="PanelContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+custom_minimum_size = Vector2(0, 90)
+
+[node name="EventAttrScroll" type="ScrollContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel/EventAttrPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="EventAttrMargin" type="MarginContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel/EventAttrPanel/EventAttrScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 6
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 6
+theme_override_constants/margin_bottom = 4
+
+[node name="EventAttrList" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox/EventDetailPanel/EventAttrPanel/EventAttrScroll/EventAttrMargin"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="EventDetailLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 72)
+size_flags_vertical = 0
+scroll_active = true
+
+[node name="RelatedEventsLabel" type="Label" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+text = "关联事件"
+theme_override_font_sizes/font_size = 12
+
+[node name="RelatedEventsList" type="ItemList" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+custom_minimum_size = Vector2(0, 80)
+
+[node name="ParticipantsLabel" type="Label" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+text = "相关人物/目标"
+theme_override_font_sizes/font_size = 12
+
+[node name="ParticipantsList" type="ItemList" parent="UI/HUD/RightPanel/VBox/EventDetailPanel"]
+layout_mode = 2
+size_flags_vertical = 3
+size_flags_stretch_ratio = 1.0
+custom_minimum_size = Vector2(0, 80)
+
 [node name="BottomBar" type="HBoxContainer" parent="UI/HUD"]
 layout_mode = 1
 anchors_preset = 12
