@@ -1,0 +1,25 @@
+---
+description: Rust 核心模拟、Tick、确定性与规则边界
+globs: rust/src/core/**/*
+alwaysApply: false
+---
+
+<!--
+Project: game1
+Created Date: 2026-05-27
+Author: liming
+Email: lmlala@aliyun.com
+Copyright (c) 2025 FiuAI
+-->
+
+# 核心模拟 (Simulation Core)
+
+- 核心游戏规则只写在 Rust 纯逻辑层, 优先放 `rust/src/core/`.
+- Godot/GDScript 只调用 Rust API, 不重复实现经济、战斗、关系、事件触发等规则.
+- 所有模拟以离散 Tick 推进, 不依赖渲染帧率或真实时间.
+- 随机行为必须使用显式 seed, 同 seed + 同输入应得到可复现结果.
+- Tick 顺序固定: 经济 -> 决策 -> 行动执行 -> 战斗 -> 关系更新 -> 事件触发 -> 日志/指标.
+- 输入实体 ID、指令参数、概率/权重范围必须校验; 缺失数据返回明确错误, 不做静默 fallback.
+- 概率、欲望、关系、状态强度等数值必须 clamp 到文档定义范围.
+- 单个函数保持短小; 复杂系统拆成规则计算、事件生成、事件应用、指标输出.
+- 状态变化应通过事件表达, 方便日志、回放和调试.

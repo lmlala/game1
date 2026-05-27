@@ -1,0 +1,24 @@
+---
+description: 涌现玩法内容、世界观语调与规则文档约定
+globs: docs/gameplay/**/*,rust/src/core/content/**/*
+alwaysApply: false
+---
+
+<!--
+Project: game1
+Created Date: 2026-05-27
+Author: liming
+Email: lmlala@aliyun.com
+Copyright (c) 2025 FiuAI
+-->
+
+# 玩法内容 (Gameplay Content)
+
+- 第一版主题是武侠帮派抢地盘 + 黑色幽默 + 日志驱动涌现叙事.
+- 内容优先服务可模拟规则: 角色欲望、性格、状态、关系、经济压力、地盘收益.
+- 新增角色模板、地盘、事件时必须说明触发条件、影响范围、日志表现和可测试指标.
+- 玩家指令保持宏观: 扩张、防守、奖励、处罚、招募; 不设计实时微操.
+- 文本语调是严肃江湖叙述下产生荒诞后果, 避免无规则支撑的纯段子.
+- 黑色幽默事件必须能回写状态或关系, 例如仇恨、声望、财政、伤病、叛变倾向.
+- Demo 内容先控制规模: 3 个帮派、6 个地盘、24-36 个角色, 方便 30-100 Tick 日志验收.
+- 调整玩法内容时同步更新 `docs/gameplay/demo-v1.md`、相关 rules 文档和验收指标.

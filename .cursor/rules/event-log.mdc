@@ -1,0 +1,25 @@
+---
+description: 事件溯源、事件 schema 与日志文本约定
+globs: rust/src/core/events/**/*,rust/src/core/logging/**/*,docs/simulation/**/*
+alwaysApply: false
+---
+
+<!--
+Project: game1
+Created Date: 2026-05-27
+Author: liming
+Email: lmlala@aliyun.com
+Copyright (c) 2025 FiuAI
+-->
+
+# 事件与日志 (Event Log)
+
+- 结构化事件是世界状态、日志、回放和测试的共同事实源.
+- 事件必须包含 `schema_version`, `tick`, `event_id`, `event_type`, `severity`, `actors`, `targets`, `payload`.
+- 事件 ID 必须稳定且可追踪, 同一 Tick 内按确定性顺序生成.
+- 事件 payload 使用明确字段, 避免把可验证数据只写进自然语言文本.
+- 日志文本由事件模板渲染, 不反向解析日志驱动逻辑.
+- 日志优先级分为 `critical`, `major`, `normal`, `minor`, 每 Tick 输出应可摘要合并.
+- 黑色幽默文本必须服务事件后果, 不覆盖结构化事实.
+- 固定 seed 的事件流应可用于回归测试: 重要事件类型、数量区间、关键状态不变量可断言.
+- 新增事件类型时同步更新 `docs/simulation/event-schema.md` 与 `docs/gameplay/rules/events.md`.
