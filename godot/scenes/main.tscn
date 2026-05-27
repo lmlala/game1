@@ -299,6 +299,12 @@ custom_minimum_size = Vector2(88, 40)
 toggle_mode = true
 text = "帮派名册"
 
+[node name="BtnEventHistory" type="Button" parent="UI/HUD/BottomBar"]
+layout_mode = 2
+custom_minimum_size = Vector2(72, 40)
+toggle_mode = true
+text = "事件"
+
 [node name="Sep2" type="VSeparator" parent="UI/HUD/BottomBar"]
 layout_mode = 2
 

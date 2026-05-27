@@ -76,11 +76,27 @@ func _load_sim_config() -> void:
 	tick_timer.wait_time = _tick_interval_sec
 
 
+
+func _has_event_history_btn() -> bool:
+	return btn_event_history != null and is_instance_valid(btn_event_history)
+
+
+func _set_gang_roster_pressed(pressed: bool) -> void:
+	if btn_gang_roster != null and is_instance_valid(btn_gang_roster):
+		btn_gang_roster.button_pressed = pressed
+
+
+func _set_event_history_pressed(pressed: bool) -> void:
+	if _has_event_history_btn():
+		btn_event_history.button_pressed = pressed
+
 func _setup_ui_connections() -> void:
 	$UI/HUD/BottomBar/BtnPause.toggled.connect(_on_pause_toggled)
 	$UI/HUD/BottomBar/BtnReset.pressed.connect(_on_reset)
-	btn_gang_roster.toggled.connect(_on_gang_roster_toggled)
-	btn_event_history.toggled.connect(_on_event_history_toggled)
+	if btn_gang_roster != null:
+		btn_gang_roster.toggled.connect(_on_gang_roster_toggled)
+	if _has_event_history_btn():
+		btn_event_history.toggled.connect(_on_event_history_toggled)
 	filter_gang.item_selected.connect(_on_event_filter_changed)
 	filter_type.item_selected.connect(_on_event_filter_changed)
 	filter_severity.item_selected.connect(_on_event_filter_changed)
@@ -173,8 +189,8 @@ func _on_reset() -> void:
 	if sim == null:
 		return
 	sim.reset_demo(42)
-	btn_gang_roster.button_pressed = false
-	btn_event_history.button_pressed = false
+	_set_gang_roster_pressed(false)
+	_set_event_history_pressed(false)
 	_panel_mode = "event"
 	_back_mode = "event"
 	_show_event_mode()
@@ -205,7 +221,7 @@ func _on_tick_advanced(tick: int) -> void:
 
 func _on_gang_roster_toggled(pressed: bool) -> void:
 	if pressed:
-		btn_event_history.button_pressed = false
+		_set_event_history_pressed(false)
 		_ui_log("打开帮派名册")
 		_panel_mode = "roster"
 		_show_roster_mode()
@@ -255,18 +271,18 @@ func _on_back_pressed() -> void:
 			_show_event_detail_mode(_selected_event_id)
 		else:
 			_panel_mode = "event"
-			btn_gang_roster.button_pressed = false
-			btn_event_history.button_pressed = false
+			_set_gang_roster_pressed(false)
+			_set_event_history_pressed(false)
 			_show_event_mode()
 	elif _panel_mode == "event_detail":
 		_show_event_history_mode()
 	elif _panel_mode == "event_history":
 		_panel_mode = "event"
-		btn_event_history.button_pressed = false
+		_set_event_history_pressed(false)
 		_show_event_mode()
 	elif _panel_mode == "roster":
 		_panel_mode = "event"
-		btn_gang_roster.button_pressed = false
+		_set_gang_roster_pressed(false)
 		_show_event_mode()
 
 
@@ -281,7 +297,7 @@ func _on_entity_selected(entity_id: String) -> void:
 
 func _on_event_history_toggled(pressed: bool) -> void:
 	if pressed:
-		btn_gang_roster.button_pressed = false
+		_set_gang_roster_pressed(false)
 		_ui_log("打开事件历史")
 		_back_mode = "event"
 		_show_event_history_mode()
