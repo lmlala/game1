@@ -329,34 +329,34 @@ fn item_summary(item: &Item) -> VarDict {
 
 fn person_pos_x(id: &str) -> f32 {
     let h = hash_id(id);
-    180.0 + (h % 900) as f32
+    40.0 + (h % 820) as f32
 }
 
 fn person_pos_y(id: &str) -> f32 {
     let h = hash_id(id);
-    120.0 + ((h / 900) % 420) as f32
+    60.0 + ((h / 820) % 520) as f32
 }
 
 fn territory_pos_x(id: &str) -> f32 {
     match id {
-        "territory:west_market" => 200.0,
-        "territory:east_dock" => 520.0,
-        "territory:gambling_house" => 760.0,
-        "territory:brothel" => 320.0,
-        "territory:black_market" => 900.0,
-        "territory:yamen" => 640.0,
+        "territory:west_market" => 120.0,
+        "territory:east_dock" => 380.0,
+        "territory:gambling_house" => 620.0,
+        "territory:brothel" => 240.0,
+        "territory:black_market" => 720.0,
+        "territory:yamen" => 500.0,
         _ => 400.0,
     }
 }
 
 fn territory_pos_y(id: &str) -> f32 {
     match id {
-        "territory:west_market" => 180.0,
-        "territory:east_dock" => 220.0,
-        "territory:gambling_house" => 260.0,
-        "territory:brothel" => 420.0,
-        "territory:black_market" => 380.0,
-        "territory:yamen" => 520.0,
+        "territory:west_market" => 100.0,
+        "territory:east_dock" => 160.0,
+        "territory:gambling_house" => 220.0,
+        "territory:brothel" => 320.0,
+        "territory:black_market" => 400.0,
+        "territory:yamen" => 480.0,
         _ => 300.0,
     }
 }

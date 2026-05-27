@@ -29,14 +29,14 @@ func _ready() -> void:
 
 
 func _setup_ui_connections() -> void:
-	$UI/HUD/TopBar/BtnPause.toggled.connect(_on_pause_toggled)
-	$UI/HUD/TopBar/BtnNext.pressed.connect(_on_next_day)
-	$UI/HUD/TopBar/BtnReset.pressed.connect(_on_reset)
-	$UI/HUD/ActionBar/BtnExpand.pressed.connect(_on_expand)
-	$UI/HUD/ActionBar/BtnDefend.pressed.connect(_on_defend)
-	$UI/HUD/ActionBar/BtnReward.pressed.connect(_on_reward)
-	$UI/HUD/ActionBar/BtnPunish.pressed.connect(_on_punish)
-	$UI/HUD/ActionBar/BtnRecruit.pressed.connect(_on_recruit)
+	$UI/HUD/BottomBar/BtnPause.toggled.connect(_on_pause_toggled)
+	$UI/HUD/BottomBar/BtnNext.pressed.connect(_on_next_day)
+	$UI/HUD/BottomBar/BtnReset.pressed.connect(_on_reset)
+	$UI/HUD/BottomBar/BtnExpand.pressed.connect(_on_expand)
+	$UI/HUD/BottomBar/BtnDefend.pressed.connect(_on_defend)
+	$UI/HUD/BottomBar/BtnReward.pressed.connect(_on_reward)
+	$UI/HUD/BottomBar/BtnPunish.pressed.connect(_on_punish)
+	$UI/HUD/BottomBar/BtnRecruit.pressed.connect(_on_recruit)
 	btn_back.pressed.connect(_show_event_mode)
 	tick_timer.timeout.connect(_on_timer_tick)
 
@@ -101,7 +101,7 @@ func _on_reset() -> void:
 		return
 	sim.reset_demo(42)
 	tick_timer.stop()
-	$UI/HUD/TopBar/BtnPause.button_pressed = false
+	$UI/HUD/BottomBar/BtnPause.button_pressed = false
 	sim.set_paused(false)
 	_show_event_mode()
 	_refresh_all()
