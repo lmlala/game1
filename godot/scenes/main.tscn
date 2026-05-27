@@ -12,7 +12,6 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1")
 
-[node name="DemoController" type="DemoController" parent="."]
 
 [node name="WorldView" type="Node2D" parent="."]
 position = Vector2(0, 48)

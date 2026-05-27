@@ -9,6 +9,7 @@ mod core;
 mod nodes;
 
 use godot::prelude::*;
+pub use nodes::DemoController;
 
 struct Game1Extension;
 

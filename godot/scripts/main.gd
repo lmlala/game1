@@ -1,6 +1,8 @@
 extends Control
 
-@onready var sim: DemoController = $DemoController
+## Rust GDExtension 节点; 运行时通过 ClassDB 创建, 避免编辑器未加载扩展时报类型错误.
+var sim: Node
+
 @onready var time_label: Label = $UI/HUD/TopBar/TimeLabel
 @onready var metrics_label: Label = $UI/HUD/TopBar/MetricsLabel
 @onready var event_log: RichTextLabel = $UI/HUD/RightPanel/VBox/EventLog
@@ -16,6 +18,9 @@ var _selected_id := ""
 
 
 func _ready() -> void:
+	sim = _ensure_sim()
+	if sim == null:
+		return
 	sim.tick_advanced.connect(_on_tick_advanced)
 	$UI/HUD/TopBar/BtnPause.toggled.connect(_on_pause_toggled)
 	$UI/HUD/TopBar/BtnNext.pressed.connect(_on_next_day)
@@ -32,7 +37,23 @@ func _ready() -> void:
 	_on_reset()
 
 
+func _ensure_sim() -> Node:
+	if has_node("DemoController"):
+		return $DemoController
+	if not ClassDB.class_exists("DemoController"):
+		push_error(
+			"找不到 DemoController: 请先在项目根目录执行 ./scripts/build-rust.sh, 然后重启 Godot 编辑器."
+		)
+		return null
+	var node: Node = ClassDB.instantiate("DemoController")
+	node.name = "DemoController"
+	add_child(node)
+	return node
+
+
 func _on_reset() -> void:
+	if sim == null:
+		return
 	sim.reset_demo(42)
 	tick_timer.stop()
 	$UI/HUD/TopBar/BtnPause.button_pressed = false
@@ -42,6 +63,8 @@ func _on_reset() -> void:
 
 
 func _on_pause_toggled(pressed: bool) -> void:
+	if sim == null:
+		return
 	sim.set_paused(pressed)
 	if pressed:
 		tick_timer.stop()
@@ -51,11 +74,12 @@ func _on_pause_toggled(pressed: bool) -> void:
 
 
 func _on_next_day() -> void:
-	sim.advance_tick()
+	if sim:
+		sim.advance_tick()
 
 
 func _on_timer_tick() -> void:
-	if not sim.is_paused():
+	if sim and not sim.is_paused():
 		sim.advance_tick()
 
 
@@ -64,6 +88,8 @@ func _on_tick_advanced(_tick: int) -> void:
 
 
 func _on_expand() -> void:
+	if sim == null:
+		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("territory", "territory:east_dock"))
 	if _selected_id.begins_with("territory:"):
@@ -72,6 +98,8 @@ func _on_expand() -> void:
 
 
 func _on_defend() -> void:
+	if sim == null:
+		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("territory", "territory:gambling_house"))
 	if _selected_id.begins_with("territory:"):
@@ -80,6 +108,8 @@ func _on_defend() -> void:
 
 
 func _on_reward() -> void:
+	if sim == null:
+		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("person", "person:accountant_black"))
 	if _selected_id.begins_with("person:"):
@@ -88,6 +118,8 @@ func _on_reward() -> void:
 
 
 func _on_punish() -> void:
+	if sim == null:
+		return
 	var sel: Dictionary = sim.get_default_selection()
 	var key: String = str(sel.get("person", "person:accountant_black_2"))
 	if _selected_id.begins_with("person:"):
@@ -96,7 +128,8 @@ func _on_punish() -> void:
 
 
 func _on_recruit() -> void:
-	sim.queue_recruit(100)
+	if sim:
+		sim.queue_recruit(100)
 
 
 func _on_entity_selected(entity_id: String) -> void:
@@ -115,6 +148,8 @@ func _show_event_mode() -> void:
 
 
 func _show_target_mode(entity_id: String) -> void:
+	if sim == null:
+		return
 	_panel_mode = "target"
 	event_log.visible = false
 	target_title.visible = true
@@ -137,11 +172,15 @@ func _show_target_mode(entity_id: String) -> void:
 
 
 func _refresh_header() -> void:
+	if sim == null:
+		return
 	time_label.text = sim.get_time_label()
 	metrics_label.text = sim.get_metrics_summary()
 
 
 func _refresh_event_log() -> void:
+	if sim == null:
+		return
 	event_log.clear()
 	var logs: PackedStringArray = sim.get_recent_logs()
 	for line in logs:

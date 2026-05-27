@@ -50,3 +50,5 @@ GODOT_BIN=/path/to/Godot ./scripts/run-godot.sh
 | 找不到 dylib/so | 检查 `game1_core.gdextension` 路径是否为 `res://../rust/target/...` |
 | rustc 版本不够 | `rustup update stable` |
 | Rust 类不在 Change Type 列表 | 先 build, 重启 Godot; 查看 Output 面板错误 |
+| GDScript 报找不到 `DemoController` | 先 `./scripts/build-rust.sh`, **完全退出并重启 Godot**; 主场景会在运行时通过 `ClassDB` 创建节点 |
+| macOS 仍无法加载扩展 | 在 `rust/` 下执行 `cargo build`, 确认生成 `rust/target/debug/libgame1_core.dylib` |

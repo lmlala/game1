@@ -4,14 +4,14 @@ signal entity_selected(entity_id: String)
 
 const TOKEN_SCENE := preload("res://scenes/world/entity_token.tscn")
 
-var _sim: DemoController
+var _sim: Node
 
 
-func setup(controller: DemoController) -> void:
+func setup(controller: Node) -> void:
 	_sim = controller
 
 
-func refresh(controller: DemoController) -> void:
+func refresh(controller: Node) -> void:
 	_sim = controller
 	for child in get_children():
 		child.queue_free()
