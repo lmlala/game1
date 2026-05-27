@@ -20,7 +20,7 @@ var sim: Node
 @onready var tick_timer: Timer = $TickTimer
 @onready var btn_gang_roster: Button = $UI/HUD/BottomBar/BtnGangRoster
 
-const FALLBACK_SCRIPT := preload("res://scripts/demo_sim_fallback.gd")
+const FALLBACK_SCRIPT: GDScript = preload("res://scripts/demo_sim_fallback.gd")
 const SIM_CONFIG_PATH := "res://config/sim.cfg"
 
 var _panel_mode := "event"
