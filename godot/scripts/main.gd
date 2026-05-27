@@ -42,6 +42,26 @@ const DEFAULT_GANG_ROSTER = [
 	{"id": "gang:green_dragon", "name": "青龙会"},
 ]
 
+const DEFAULT_EVENT_TYPE_FILTERS = [
+	{"id": "*", "label": "全部类型"},
+	{"id": "EconomySettled", "label": "日结"},
+	{"id": "FinancialCrisis", "label": "财政危机"},
+	{"id": "PersonRecruited", "label": "招募"},
+	{"id": "PersonDefected", "label": "叛逃"},
+	{"id": "BattleStarted", "label": "开战"},
+	{"id": "TerritoryConquered", "label": "夺地盘"},
+	{"id": "PlayerCommandQueued", "label": "帮主号令"},
+	{"id": "AbsurdAccident", "label": "荒诞意外"},
+]
+
+const DEFAULT_SEVERITY_FILTERS = [
+	{"id": "*", "label": "全部级别"},
+	{"id": "critical", "label": "危急"},
+	{"id": "major", "label": "重大"},
+	{"id": "normal", "label": "普通"},
+	{"id": "minor", "label": "琐碎"},
+]
+
 
 var _panel_mode := "event"
 var _selected_person_id := ""
@@ -139,6 +159,7 @@ func _boot_sim() -> void:
 	$UI.layer = 10
 	_init_gang_options()
 	_on_reset()
+	call_deferred("_init_event_history_filters")
 
 
 func _ensure_sim() -> Node:
@@ -402,36 +423,190 @@ func _show_event_detail_mode(event_id: String) -> void:
 	_fill_event_detail_panel(event_id)
 
 
-func _init_event_history_filters() -> void:
+
+func _variant_to_string_array(value: Variant) -> PackedStringArray:
+	var out := PackedStringArray()
+	if value == null:
+		return out
+	if value is PackedStringArray:
+		return value
+	if value is Array:
+		for item in value:
+			out.append(str(item))
+		return out
+	return out
+
+
+func _filter_meta_has_options(meta: Dictionary) -> bool:
+	if meta.is_empty():
+		return false
+	var g: PackedStringArray = _variant_to_string_array(meta.get("gang_ids", null))
+	return g.size() > 0
+
+
+func _default_event_filter_meta() -> Dictionary:
+	var gang_ids := PackedStringArray(["*"])
+	var gang_labels := PackedStringArray(["全部帮派"])
+	for g in DEFAULT_GANG_ROSTER:
+		gang_ids.append(str(g["id"]))
+		gang_labels.append(str(g["name"]))
+	var type_ids := PackedStringArray()
+	var type_labels := PackedStringArray()
+	for row in DEFAULT_EVENT_TYPE_FILTERS:
+		type_ids.append(str(row["id"]))
+		type_labels.append(str(row["label"]))
+	var sev_ids := PackedStringArray()
+	var sev_labels := PackedStringArray()
+	for row in DEFAULT_SEVERITY_FILTERS:
+		sev_ids.append(str(row["id"]))
+		sev_labels.append(str(row["label"]))
+	return {
+		"gang_ids": gang_ids,
+		"gang_labels": gang_labels,
+		"type_ids": type_ids,
+		"type_labels": type_labels,
+		"severity_ids": sev_ids,
+		"severity_labels": sev_labels,
+		"entity_ids": PackedStringArray(["*"]),
+		"entity_labels": PackedStringArray(["全部相关人"]),
+	}
+
+
+func _normalize_event_filter_meta(meta: Dictionary) -> Dictionary:
+	var out := _default_event_filter_meta()
+	if meta.is_empty():
+		return out
+	for key in ["gang", "type", "severity", "entity"]:
+		var ids := _variant_to_string_array(meta.get("%s_ids" % key, null))
+		var labels := _variant_to_string_array(meta.get("%s_labels" % key, null))
+		if ids.size() > 0:
+			out["%s_ids" % key] = ids
+			if labels.size() == ids.size():
+				out["%s_labels" % key] = labels
+			else:
+				out["%s_labels" % key] = ids
+	if _variant_to_string_array(meta.get("entity_ids", null)).size() <= 1 and _safe_has_method("get_entities"):
+		var persons: Variant = sim.call("get_entities", "person")
+		if persons is Array and persons.size() > 0:
+			var eids := PackedStringArray(["*"])
+			var elabels := PackedStringArray(["全部相关人"])
+			for row in persons:
+				var d: Dictionary = row if row is Dictionary else {}
+				var pid := str(d.get("id", ""))
+				if pid.is_empty():
+					continue
+				eids.append(pid)
+				elabels.append(str(d.get("label", pid)))
+			out["entity_ids"] = eids
+			out["entity_labels"] = elabels
+	return out
+
+
+func _event_filter_meta_from_gangs() -> Dictionary:
+	var base := _default_event_filter_meta()
+	if sim == null or not _safe_has_method("get_gangs"):
+		return base
+	var gangs: Variant = sim.call("get_gangs")
+	if gangs == null or not (gangs is Array):
+		return base
+	var gang_ids := PackedStringArray(["*"])
+	var gang_labels := PackedStringArray(["全部帮派"])
+	for g in gangs:
+		var d: Dictionary = g if g is Dictionary else {}
+		var gid := str(d.get("id", ""))
+		if gid.is_empty():
+			continue
+		gang_ids.append(gid)
+		gang_labels.append(str(d.get("name", gid)))
+	base["gang_ids"] = gang_ids
+	base["gang_labels"] = gang_labels
+	return base
+
+
+func _as_log_lines(value: Variant) -> PackedStringArray:
+	var lines := PackedStringArray()
+	if value is PackedStringArray:
+		return value
+	if value is Array:
+		for item in value:
+			lines.append(str(item))
+	return lines
+
+
+func _event_rows_from_recent_logs(limit: int) -> Array:
+	var rows: Array = []
+	if sim == null or not _safe_has_method("get_recent_logs"):
+		return rows
+	var logs := _as_log_lines(sim.call("get_recent_logs"))
+	var n := mini(logs.size(), limit)
+	for i in range(n):
+		var line := str(logs[i])
+		if line.is_empty():
+			continue
+		rows.append({
+			"id": "recent-log-%d" % i,
+			"tick": 0,
+			"type_label": "江湖日志",
+			"summary": line,
+		})
+	return rows
+
+
+func _query_event_rows(gang_id: String, type_id: String, sev_id: String, entity_id: String, limit: int) -> Array:
 	if sim == null:
-		return
+		return []
+	var rows: Array = []
+	if sim.get_script() == FALLBACK_SCRIPT:
+		if sim.has_method("query_event_history"):
+			rows = sim.query_event_history(gang_id, type_id, sev_id, entity_id, limit)
+	elif _safe_has_method("query_event_history"):
+		var r: Variant = sim.call(
+			"query_event_history", gang_id, type_id, sev_id, entity_id, limit
+		)
+		if r is Array:
+			rows = r
+	if rows.is_empty():
+		rows = _event_rows_from_recent_logs(limit)
+	return rows
+
+
+func _init_event_history_filters() -> void:
 	var meta: Dictionary = _fetch_event_history_filter_meta()
-	_fill_filter_option(filter_gang, "gang", meta)
-	_fill_filter_option(filter_type, "type", meta)
-	_fill_filter_option(filter_severity, "severity", meta)
-	_fill_filter_option(filter_entity, "entity", meta)
+	if is_instance_valid(filter_gang):
+		_fill_filter_option(filter_gang, "gang", meta)
+	if is_instance_valid(filter_type):
+		_fill_filter_option(filter_type, "type", meta)
+	if is_instance_valid(filter_severity):
+		_fill_filter_option(filter_severity, "severity", meta)
+	if is_instance_valid(filter_entity):
+		_fill_filter_option(filter_entity, "entity", meta)
 
 
 func _fetch_event_history_filter_meta() -> Dictionary:
 	if sim == null:
-		return {}
+		return _default_event_filter_meta()
 	if sim.get_script() == FALLBACK_SCRIPT:
 		if sim.has_method("get_event_history_filter_meta"):
-			return sim.get_event_history_filter_meta()
-		return {}
+			return _normalize_event_filter_meta(sim.get_event_history_filter_meta())
+		return _default_event_filter_meta()
 	if _safe_has_method("get_event_history_filter_meta"):
 		var r: Variant = sim.call("get_event_history_filter_meta")
-		if r is Dictionary:
-			return r
-	return {}
+		if r is Dictionary and _filter_meta_has_options(r):
+			return _normalize_event_filter_meta(r)
+	var from_gangs := _event_filter_meta_from_gangs()
+	if _filter_meta_has_options(from_gangs):
+		return from_gangs
+	return _default_event_filter_meta()
 
 
 func _fill_filter_option(option: OptionButton, key: String, meta: Dictionary) -> void:
+	if option == null or not is_instance_valid(option):
+		return
 	option.clear()
 	var ids_key := "%s_ids" % key
 	var labels_key := "%s_labels" % key
-	var ids: PackedStringArray = meta.get(ids_key, PackedStringArray())
-	var labels: PackedStringArray = meta.get(labels_key, PackedStringArray())
+	var ids: PackedStringArray = _variant_to_string_array(meta.get(ids_key, null))
+	var labels: PackedStringArray = _variant_to_string_array(meta.get(labels_key, null))
 	if ids.is_empty():
 		option.add_item("全部")
 		option.set_item_metadata(0, "*")
@@ -456,22 +631,17 @@ func _current_filter_id(key: String, option: OptionButton) -> String:
 
 
 func _refresh_event_history_list() -> void:
-	event_history_list.clear()
-	if sim == null:
+	if event_history_list == null or not is_instance_valid(event_history_list):
 		return
-	var gang_id := _current_filter_id("gang", filter_gang)
-	var type_id := _current_filter_id("type", filter_type)
-	var sev_id := _current_filter_id("severity", filter_severity)
-	var entity_id := _current_filter_id("entity", filter_entity)
-	var rows: Array = []
-	if sim.get_script() == FALLBACK_SCRIPT and sim.has_method("query_event_history"):
-		rows = sim.query_event_history(gang_id, type_id, sev_id, entity_id, 80)
-	elif _safe_has_method("query_event_history"):
-		var r: Variant = sim.call(
-			"query_event_history", gang_id, type_id, sev_id, entity_id, 80
-		)
-		if r is Array:
-			rows = r
+	event_history_list.clear()
+	var gang_id := _current_filter_id("gang", filter_gang) if is_instance_valid(filter_gang) else "*"
+	var type_id := _current_filter_id("type", filter_type) if is_instance_valid(filter_type) else "*"
+	var sev_id := _current_filter_id("severity", filter_severity) if is_instance_valid(filter_severity) else "*"
+	var entity_id := _current_filter_id("entity", filter_entity) if is_instance_valid(filter_entity) else "*"
+	var rows: Array = _query_event_rows(gang_id, type_id, sev_id, entity_id, 80)
+	if rows.is_empty():
+		event_history_list.add_item("暂无事件。请继续运行模拟，或执行 ./scripts/build-rust.sh 后重启 Godot。")
+		return
 	for row in rows:
 		var d: Dictionary = row if row is Dictionary else {}
 		var eid := str(d.get("id", ""))
@@ -824,13 +994,20 @@ func _refresh_header() -> void:
 
 
 func _refresh_game_log() -> void:
-	if sim == null:
+	if sim == null or event_log == null:
 		return
 	event_log.clear()
-	var logs: PackedStringArray = sim.get_recent_logs()
-	for line in logs:
-		event_log.append_text(line + "\n")
-	event_log.scroll_to_line(event_log.get_line_count())
+	var logs := PackedStringArray()
+	if sim.get_script() == FALLBACK_SCRIPT:
+		logs = _as_log_lines(sim.get_recent_logs())
+	elif _safe_has_method("get_recent_logs"):
+		logs = _as_log_lines(sim.call("get_recent_logs"))
+	if logs.is_empty():
+		event_log.append_text("【提示】江湖事件尚未产生。模拟会自动推进（约 1 秒/天），或检查 Rust 扩展是否已加载。\n")
+	else:
+		for line in logs:
+			event_log.append_text(str(line) + "\n")
+	event_log.scroll_to_line(max(0, event_log.get_line_count() - 1))
 
 
 func _refresh_all() -> void:

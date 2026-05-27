@@ -17,47 +17,49 @@ use crate::core::world::WorldState;
 type VarDict = Dictionary<Variant, Variant>;
 
 pub fn build_filter_meta(runner: &SimRunner) -> VarDict {
-    let mut gangs_ids = PackedStringArray::new();
-    let mut gangs_labels = PackedStringArray::new();
-    gangs_ids.push("*");
-    gangs_labels.push("全部帮派");
+    let mut gangs_ids = Array::<Variant>::new();
+    let mut gangs_labels = Array::<Variant>::new();
+    gangs_ids.push(&Variant::from("*"));
+    gangs_labels.push(&Variant::from("全部帮派"));
     let mut gangs: Vec<_> = runner.world.gangs.values().collect();
     gangs.sort_by(|a, b| a.id.as_str().cmp(b.id.as_str()));
     for gang in gangs {
         if gang.defeated {
             continue;
         }
-        gangs_ids.push(gang.id.as_str());
-        gangs_labels.push(gang.name.as_str());
+        gangs_ids.push(&Variant::from(gang.id.as_str()));
+        gangs_labels.push(&Variant::from(gang.name.as_str()));
     }
 
-    let mut type_ids = PackedStringArray::new();
-    let mut type_labels = PackedStringArray::new();
-    type_ids.push("*");
-    type_labels.push("全部类型");
+    let mut type_ids = Array::<Variant>::new();
+    let mut type_labels = Array::<Variant>::new();
+    type_ids.push(&Variant::from("*"));
+    type_labels.push(&Variant::from("全部类型"));
     for (key, label) in all_filter_event_types() {
-        type_ids.push(key);
-        type_labels.push(label);
+        type_ids.push(&Variant::from(key));
+        type_labels.push(&Variant::from(label));
     }
 
-    let mut sev_ids = PackedStringArray::new();
-    let mut sev_labels = PackedStringArray::new();
-    sev_ids.push("*");
-    sev_labels.push("全部级别");
+    let mut sev_ids = Array::<Variant>::new();
+    let mut sev_labels = Array::<Variant>::new();
+    sev_ids.push(&Variant::from("*"));
+    sev_labels.push(&Variant::from("全部级别"));
     for (key, label) in all_filter_severities() {
-        sev_ids.push(key);
-        sev_labels.push(label);
+        sev_ids.push(&Variant::from(key));
+        sev_labels.push(&Variant::from(label));
     }
 
-    let mut entity_ids = PackedStringArray::new();
-    let mut entity_labels = PackedStringArray::new();
-    entity_ids.push("*");
-    entity_labels.push("全部相关人");
+    let mut entity_ids = Array::<Variant>::new();
+    let mut entity_labels = Array::<Variant>::new();
+    entity_ids.push(&Variant::from("*"));
+    entity_labels.push(&Variant::from("全部相关人"));
     let mut persons: Vec<_> = runner.world.persons.values().collect();
     persons.sort_by(|a, b| a.name.cmp(&b.name));
     for person in persons {
-        entity_ids.push(person.id.as_str());
-        entity_labels.push(format!("{} [{}]", person.name, person.role).as_str());
+        entity_ids.push(&Variant::from(person.id.as_str()));
+        entity_labels.push(&Variant::from(
+            format!("{} [{}]", person.name, person.role).as_str(),
+        ));
     }
 
     let mut d = VarDict::new();
@@ -71,6 +73,7 @@ pub fn build_filter_meta(runner: &SimRunner) -> VarDict {
     d.set("entity_labels", &entity_labels);
     d
 }
+
 
 pub fn query_history(
     runner: &SimRunner,
