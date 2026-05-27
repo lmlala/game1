@@ -4,11 +4,11 @@ compatibility_minimum = 4.1
 reloadable = true
 
 [libraries]
-linux.debug.x86_64 = "res://../rust/target/debug/libgame1_core.so"
-linux.release.x86_64 = "res://../rust/target/release/libgame1_core.so"
-windows.debug.x86_64 = "res://../rust/target/debug/game1_core.dll"
-windows.release.x86_64 = "res://../rust/target/release/game1_core.dll"
-macos.debug = "res://../rust/target/debug/libgame1_core.dylib"
-macos.release = "res://../rust/target/release/libgame1_core.dylib"
-macos.debug.arm64 = "res://../rust/target/debug/libgame1_core.dylib"
-macos.release.arm64 = "res://../rust/target/release/libgame1_core.dylib"
+linux.debug.x86_64 = "res://bin/libgame1_core.so"
+linux.release.x86_64 = "res://bin/libgame1_core.so"
+windows.debug.x86_64 = "res://bin/game1_core.dll"
+windows.release.x86_64 = "res://bin/game1_core.dll"
+macos.debug = "res://bin/libgame1_core.dylib"
+macos.release = "res://bin/libgame1_core.dylib"
+macos.debug.arm64 = "res://bin/libgame1_core.dylib"
+macos.release.arm64 = "res://bin/libgame1_core.dylib"

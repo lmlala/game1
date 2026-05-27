@@ -39,6 +39,11 @@ offset_right = 1270.0
 offset_bottom = 44.0
 theme_override_constants/separation = 12
 
+[node name="StatusLabel" type="Label" parent="UI/HUD/TopBar"]
+layout_mode = 2
+text = "初始化中..."
+theme_override_colors/font_color = Color(1, 0.85, 0.3, 1)
+
 [node name="TimeLabel" type="Label" parent="UI/HUD/TopBar"]
 layout_mode = 2
 text = "第 0 天"
@@ -113,6 +118,13 @@ text = "目标"
 [node name="AttrList" type="VBoxContainer" parent="UI/HUD/RightPanel/VBox"]
 layout_mode = 2
 visible = false
+
+[node name="UiLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox"]
+layout_mode = 2
+custom_minimum_size = Vector2(0, 120)
+bbcode_enabled = false
+scroll_active = true
+text = "UI 操作日志:\n"
 
 [node name="EventLog" type="RichTextLabel" parent="UI/HUD/RightPanel/VBox"]
 layout_mode = 2

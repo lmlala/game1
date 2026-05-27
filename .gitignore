@@ -27,3 +27,8 @@ rust/target/
 # Local env (never commit secrets)
 .env
 .env.*
+
+# GDExtension binaries (built locally)
+godot/bin/*.so
+godot/bin/*.dylib
+godot/bin/*.dll
